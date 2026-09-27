@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CCECS | Geospatial &amp; Temporal Intelligence</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { background: #f4f7f9; }
+    .map-container { max-width: 1480px; margin: 0 auto; padding: 26px; }
+    .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 20px; }
+    .eyebrow { font-size: 11px; letter-spacing: .12em; font-weight: 800; color: #1b7db7; }
+    .subtitle { color: #6c7d8a; font-size: 13px; margin-top: 4px; }
+    .actions { display: flex; gap: 10px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+    .metric { background: #fff; border: 1px solid #d8e0e6; border-radius: 9px; padding: 16px; }
+    .metric span { font-size: 11px; color: #6c7d8a; text-transform: uppercase; font-weight: 700; }
+    .metric strong { display: block; font-size: 26px; margin-top: 4px; color: #182838; }
+    .metric small { display: block; color: #7b8b96; margin-top: 4px; font-size: 11px; }
+    
+    .layout { display: grid; grid-template-columns: 1.35fr 0.85fr; gap: 18px; }
+    .panel { background: #fff; border: 1px solid #d8e0e6; border-radius: 9px; padding: 18px; }
+    .panel h2 { margin: 0 0 4px; font-size: 16px; color: #182838; }
+    .panel p { margin: 0 0 14px; color: #6c7d8a; font-size: 12px; }
+    
+    /* Interactive Map Canvas Container */
+    .map-box {
+      background: #0f172a;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid #1e293b;
+      height: 480px;
+    }
+    #map-svg { width: 100%; height: 100%; cursor: grab; }
+    .map-legend {
+      position: absolute; bottom: 12px; left: 12px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid #334155;
+      border-radius: 6px; padding: 8px 12px;
+      display: flex; gap: 12px; font-size: 10px; color: #cbd5e1;
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-critical { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+    .dot-high { background: #f97316; box-shadow: 0 0 6px #f97316; }
+    .dot-medium { background: #eab308; }
+    .dot-low { background: #3b82f6; }
+    
+    /* Location Inspector Drawer */
+    .inspect-box {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid #e1e7eb;
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+    .inspect-title { font-weight: 800; font-size: 14px; color: #182838; }
+    .inspect-meta { font-size: 11px; color: #64748b; margin-top: 3px; }
+    
+    /* Temporal Bars */
+    .bar-chart { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding: 10px 0 20px; border-bottom: 1px solid #e2e8f0; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+    .bar-fill { width: 100%; background: #0284c7; border-radius: 2px 2px 0 0; transition: height 0.3s; min-height: 2px; }
+    .bar-label { font-size: 9px; color: #64748b; margin-top: 4px; }
+    
+    .list { display: grid; gap: 9px; }
+    .item { border: 1px solid #e1e7eb; border-radius: 7px; padding: 11px; background: #fff; }
+    .item-head { display: flex; justify-content: space-between; font-weight: 700; font-size: 12px; }
+    .meta { font-size: 11px; color: #6c7d8a; margin-top: 4px; line-height: 1.4; }
+    .notice { padding: 10px 14px; background: #fffaf2; border: 1px solid #eadbc8; border-radius: 7px; font-size: 11px; color: #845318; margin-bottom: 16px; line-height: 1.4; }
+    .full { grid-column: 1 / -1; }
+    .pill { display: inline-block; border-radius: 99px; padding: 2px 7px; font-size: 9px; font-weight: 800; }
+    .pill-critical { background: #fee2e2; color: #b91c1c; }
+    .pill-high { background: #ffedd5; color: #c2410c; }
+    .pill-medium { background: #fef9c3; color: #854d0e; }
+    .pill-low { background: #e0f2fe; color: #0369a1; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e9eef2; }
+    th { color: #6c7d8a; font-size: 10px; text-transform: uppercase; }
+    
+    @media(max-width: 1000px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .layout { grid-template-columns: 1fr; }
+    }
+    @media(max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+      .map-container { padding: 14px; }
+      .top { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<main class="map-container">
+  <div class="top">
+    <div>
+      <div class="eyebrow">GEOSPATIAL &amp; TEMPORAL INTELLIGENCE</div>
+      <h1>Crime Map &amp; Temporal Patterns</h1>
+      <p class="subtitle">Geocoded incident clusters, temporal histograms, and spatiotemporal review signals.</p>
+    </div>
+    <div class="actions">
+      <button class="secondary-btn" onclick="location.href='/dashboard'">Case dashboard</button>
+      <button class="secondary-btn" onclick="location.href='/command-center'">Command center</button>
+      <button class="secondary-btn" onclick="location.href='/crime-prediction'">Crime prediction</button>
+      <button class="primary-btn" onclick="loadMapData()">Refresh</button>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>Investigative Safeguard:</strong> Geographic and temporal clustering signals are descriptive observations for investigator review. They do not infer causation, offender identity, or criminal connection.
+  </div>
+
+  <section id="metrics" class="grid"></section>
+
+  <div class="layout">
+    <!-- LEFT: Map and Inspector -->
+    <section class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <h2 style="margin:0;">Interactive Incident Map</h2>
+          <p style="margin:2px 0 0;">Click any incident pin to inspect location details and linked investigations.</p>
+        </div>
+        <button id="toggleAiLayer" type="button" class="secondary-btn" onclick="toggleAiPatternLayer()" style="padding:5px 12px; font-size:11px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+          <span id="aiToggleDot" style="width:8px; height:8px; border-radius:50%; background:#94a3b8; display:inline-block;"></span>
+          <span>AI Pattern Layer: <b id="aiToggleState">OFF</b></span>
+        </button>
+      </div>
+
+      <div id="aiMapDisclaimer" class="notice" style="display:none; background:#fffbeb; border-color:#fde68a; color:#92400e; margin-bottom:12px; font-size:11px; line-height:1.45;">
+        <strong>AI Pattern Layer Safeguard:</strong> Statistical forecast patterns (◎) represent aggregate spatial density modeling from historical incident coordinates. They do not predict future crime certainty, identify individual suspects, or establish guilt.
+      </div>
+      
+      <div class="map-box">
+        <svg id="map-svg" viewBox="0 0 800 500"></svg>
+        <div class="map-legend">
+          <div class="legend-item"><span class="dot dot-critical"></span> Critical</div>
+          <div class="legend-item"><span class="dot dot-high"></span> High</div>
+          <div class="legend-item"><span class="dot dot-medium"></span> Medium</div>
+          <div class="legend-item"><span class="dot dot-low"></span> Low</div>
+          <div style="border-left:1px solid #475569; margin: 0 4px;"></div>
+          <div class="legend-item"><span style="color:#ffffff; font-size:12px;">●</span> Historical incident</div>
+          <div class="legend-item"><span style="color:#f59e0b; font-size:12px; font-weight:bold;">◎</span> Statistical forecast pattern</div>
+        </div>
+      </div>
+
+      <div id="inspector" class="inspect-box">
+        <div class="inspect-title" id="inspect-name">Select an incident pin above</div>
+        <div class="inspect-meta" id="inspect-meta">Geographic coordinates, address, and associated investigations will appear here.</div>
+        <div id="inspect-cases"></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Temporal Patterns & Signals -->
+    <div style="display:grid; gap:18px;">
+      <section class="panel">
+        <h2>24-Hour Incident Activity</h2>
+        <p>Distribution of recorded events across the day.</p>
+        <div id="hourly-chart" class="bar-chart"></div>
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:4px;">
+          <span>00:00 (Midnight)</span>
+          <span>12:00 (Noon)</span>
+          <span>23:00</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Day-of-Week Distribution</h2>
+        <p>Incident activity by day of the week.</p>
+        <div id="daily-chart"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Recurring Locations</h2>
+        <p>Sites associated with multiple distinct cases.</p>
+        <div id="recurring-list" class="list"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Spatiotemporal Proximity Signals</h2>
+        <p>Events occurring within 48 hours at adjacent locations.</p>
+        <div id="proximity-list" class="list"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[c]));
+
+let cachedLocations = [];
+let aiPatternLayerEnabled = false;
+let aiHotspots = [];
+
+async function toggleAiPatternLayer() {
+  aiPatternLayerEnabled = !aiPatternLayerEnabled;
+  const dot = document.getElementById('aiToggleDot');
+  const st = document.getElementById('aiToggleState');
+  const disc = document.getElementById('aiMapDisclaimer');
+  if (dot) dot.style.background = aiPatternLayerEnabled ? '#10b981' : '#94a3b8';
+  if (st) st.textContent = aiPatternLayerEnabled ? 'ON' : 'OFF';
+  if (disc) disc.style.display = aiPatternLayerEnabled ? 'block' : 'none';
+
+  if (aiPatternLayerEnabled && aiHotspots.length === 0) {
+    try {
+      const res = await fetch('/api/ai/patterns');
+      if (res.ok) {
+        const d = await res.json();
+        aiHotspots = d.hotspots || d.locations || [];
+      }
+    } catch (e) {
+      console.error('Failed to load AI patterns for map:', e);
+    }
+  }
+  renderMap(cachedLocations);
+}
+
+async function loadMapData() {
+  try {
+    const res = await fetch('/api/geospatial');
+    if (res.status === 401 || res.status === 403) {
+      window.location.href = '/login';
+      return;
+    }
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+
+    cachedLocations = d.locations || [];
+    renderMetrics(d);
+    renderMap(d.locations);
+    renderHourly(d.hourlyPatterns);
+    renderDaily(d.dayOfWeekPatterns);
+    renderRecurring(d.recurringLocations);
+    renderProximity(d.proximitySignals);
+
+    if (cachedLocations.length > 0) {
+      selectLocation(cachedLocations[0]);
+    }
+  } catch (err) {
+    document.querySelector('.map-container').insertAdjacentHTML('beforeend',
+      `<div class="notice" style="background:#fef2f2; border-color:#fecaca; color:#b91c1c;">
+        Unable to load geospatial data: ${esc(err.message)}
+       </div>`
+    );
+  }
+}
+
+function renderMetrics(d) {
+  const locs = d.locations || [];
+  let totalCases = 0;
+  let criticalLocs = 0;
+  locs.forEach(l => {
+    totalCases += (l.cases || []).length;
+    if (l.severity === 'CRITICAL') criticalLocs++;
+  });
+
+  // Calculate peak hour
+  let peakHr = 18;
+  let maxCount = -1;
+  (d.hourlyPatterns || []).forEach(p => {
+    if (p.count > maxCount) {
+      maxCount = p.count;
+      peakHr = p.hour;
+    }
+  });
+
+  const a = [
+    ['Mapped Locations', locs.length, 'Georeferenced scenes & sites'],
+    ['Plotted Incidents', totalCases, 'Associated investigations'],
+    ['Peak Activity Window', `${String(peakHr).padStart(2, '0')}:00 - ${String((peakHr + 2) % 24).padStart(2, '0')}:00`, 'Based on event timestamps'],
+    ['Recurring Hotspots', (d.recurringLocations || []).length, 'Locations in multiple cases']
+  ];
+
+  document.getElementById('metrics').innerHTML = a.map(x =>
+    `<div class="metric">
+      <span>${esc(x[0])}</span>
+      <strong>${x[1]}</strong>
+      <small>${esc(x[2])}</small>
+    </div>`
+  ).join('');
+}
+
+function renderMap(locations) {
+  const svg = document.getElementById('map-svg');
+  svg.innerHTML = '';
+
+  // Draw background grid lines for city sectors
+  for (let x = 50; x < 800; x += 60) {
+    svg.insertAdjacentHTML('beforeend', `<line x1="${x}" y1="0" x2="${x}" y2="500" stroke="#1e293b" stroke-width="1" />`);
+  }
+  for (let y = 50; y < 500; y += 60) {
+    svg.insertAdjacentHTML('beforeend', `<line x1="0" y1="${y}" x2="800" y2="${y}" stroke="#1e293b" stroke-width="1" />`);
+  }
+
+  // Draw stylized river / coastline feature (representing Victoria Embankment & Harbor)
+  svg.insertAdjacentHTML('beforeend', `
+    <path d="M 0,180 Q 250,220 450,140 T 800,200 L 800,260 Q 550,190 350,280 T 0,230 Z" fill="#082f49" opacity="0.6"/>
+    <text x="360" y="210" fill="#38bdf8" font-size="11" font-family="sans-serif" opacity="0.4" letter-spacing="3">VICTORIA WATERWAY / HARBOR</text>
+  `);
+
+  if (!locations || !locations.length) {
+    svg.insertAdjacentHTML('beforeend', `<text x="350" y="250" fill="#64748b" font-size="14">No mapped locations.</text>`);
+    return;
+  }
+
+  // Normalize lat/lng to SVG canvas (800x500)
+  // Chennai bounding box roughly: lat 13.075 to 13.095, lng 80.265 to 80.285
+  const minLat = 13.075, maxLat = 13.095;
+  const minLng = 80.265, maxLng = 80.285;
+
+  // Render statistical forecast heat rings if AI Pattern Layer is enabled
+  if (aiPatternLayerEnabled && aiHotspots && aiHotspots.length) {
+    aiHotspots.forEach(h => {
+      if (h.latitude == null || h.longitude == null) return;
+      const px = ((h.longitude - minLng) / (maxLng - minLng)) * 640 + 80;
+      const py = 500 - (((h.latitude - minLat) / (maxLat - minLat)) * 360 + 70);
+      const density = h.riskDensity || 50;
+      const rOuter = 26 + (density / 100) * 12;
+
+      const forecastHtml = `
+        <g class="ai-forecast-layer" style="cursor: pointer;" onclick="selectLocationById('${h.id}')" opacity="0.95">
+          <!-- Outer pulsating dashed ring -->
+          <circle cx="${px}" cy="${py}" r="${rOuter}" fill="rgba(245, 158, 11, 0.12)" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,4">
+            <animate attributeName="r" values="${rOuter - 3};${rOuter + 6};${rOuter - 3}" dur="3.2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.85;0.35;0.85" dur="3.2s" repeatCount="indefinite" />
+          </circle>
+          <!-- Inner concentric dashed ring -->
+          <circle cx="${px}" cy="${py}" r="${Math.round(rOuter * 0.55)}" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.75"/>
+          <text x="${px}" y="${py - rOuter - 4}" fill="#fbbf24" font-size="9" font-weight="700" text-anchor="middle" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.9))">
+            ◎ STATISTICAL FORECAST
+          </text>
+        </g>
+      `;
+      svg.insertAdjacentHTML('beforeend', forecastHtml);
+    });
+  }
+
+  locations.forEach((loc, idx) => {
+    // Normalization with padding
+    const px = ((loc.longitude - minLng) / (maxLng - minLng)) * 640 + 80;
+    const py = 500 - (((loc.latitude - minLat) / (maxLat - minLat)) * 360 + 70);
+
+    const color = loc.severity === 'CRITICAL' ? '#ef4444' :
+                  loc.severity === 'HIGH' ? '#f97316' :
+                  loc.severity === 'MEDIUM' ? '#eab308' : '#3b82f6';
+
+    const pulse = loc.severity === 'CRITICAL' || loc.severity === 'HIGH' ? `
+      <circle cx="${px}" cy="${py}" r="16" fill="${color}" opacity="0.25">
+        <animate attributeName="r" values="8;22;8" dur="2.4s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.4;0;0.4" dur="2.4s" repeatCount="indefinite" />
+      </circle>
+    ` : '';
+
+    const pinHtml = `
+      <g style="cursor: pointer;" onclick="selectLocationById('${loc.id}')" data-locid="${loc.id}">
+        ${pulse}
+        <circle cx="${px}" cy="${py}" r="8" fill="${color}" stroke="#ffffff" stroke-width="2" />
+        <text x="${px + 12}" y="${py + 4}" fill="#f8fafc" font-size="11" font-weight="bold" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.8))">
+          ${esc(loc.name)}
+        </text>
+      </g>
+    `;
+    svg.insertAdjacentHTML('beforeend', pinHtml);
+  });
+}
+
+function selectLocationById(id) {
+  const loc = cachedLocations.find(l => l.id === id);
+  if (loc) selectLocation(loc);
+}
+
+function selectLocation(loc) {
+  document.getElementById('inspect-name').textContent = loc.name;
+  document.getElementById('inspect-meta').innerHTML = `
+    <strong>Address:</strong> ${esc(loc.address)}, ${esc(loc.city)} |
+    <strong>Type:</strong> ${esc(loc.locationType)} |
+    <strong>Coords:</strong> ${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)} |
+    <strong>Severity:</strong> <span class="pill pill-${esc(loc.severity.toLowerCase())}">${esc(loc.severity)}</span>
+  `;
+
+  const casesHtml = (loc.cases || []).length ? `
+    <table>
+      <thead>
+        <tr>
+          <th>Case ID</th>
+          <th>Title</th>
+          <th>Severity</th>
+          <th>Status</th>
+          <th>Role</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${loc.cases.map(c => `
+          <tr>
+            <td><strong>${esc(c.caseId)}</strong></td>
+            <td>${esc(c.title)}</td>
+            <td><span class="pill pill-${esc(c.severity.toLowerCase())}">${esc(c.severity)}</span></td>
+            <td>${esc(c.status)}</td>
+            <td>${esc(c.relationshipType)}</td>
+            <td><a href="/investigation?caseId=${encodeURIComponent(c.caseId)}" class="secondary-btn" style="padding:3px 8px; font-size:10px;">Investigate</a></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  ` : '<div style="font-size:11px; color:#64748b; margin-top:10px;">No linked cases.</div>';
+
+  document.getElementById('inspect-cases').innerHTML = casesHtml;
+}
+
+function renderHourly(patterns) {
+  const el = document.getElementById('hourly-chart');
+  if (!patterns || !patterns.length) {
+    el.innerHTML = '<div style="font-size:11px; color:#64748b;">No hourly data available.</div>';
+    return;
+  }
+  const max = Math.max(...patterns.map(p => p.count), 1);
+
+  el.innerHTML = patterns.map(p => {
+    const pct = Math.max(4, (p.count / max) * 100);
+    const color = p.count > 0 ? '#0284c7' : '#334155';
+    return `
+      <div class="bar-col" title="${p.hour}:00 - ${p.count} event(s)">
+        <div class="bar-fill" style="height:${pct}%; background:${color};"></div>
+        <span class="bar-label">${p.hour % 6 === 0 ? p.hour : ''}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderDaily(patterns) {
+  const el = document.getElementById('daily-chart');
+  if (!patterns || !patterns.length) {
+    el.innerHTML = '<div style="font-size:11px; color:#64748b;">No day-of-week data available.</div>';
+    return;
+  }
+  const max = Math.max(...patterns.map(p => p.count), 1);
+  el.innerHTML = patterns.map(p => `
+    <div style="margin: 8px 0;">
+      <div style="display:flex; justify-content:space-between; font-size:11px;">
+        <span>${esc(p.day)}</span>
+        <b>${p.count}</b>
+      </div>
+      <div style="height:6px; background:#e2e8f0; border-radius:99px; margin-top:3px; overflow:hidden;">
+        <div style="height:100%; width:${Math.max(2, (p.count / max) * 100)}%; background:#0284c7;"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderRecurring(recurring) {
+  const el = document.getElementById('recurring-list');
+  if (!recurring || !recurring.length) {
+    el.innerHTML = '<div style="font-size:11px; color:#64748b;">No recurring locations detected across cases.</div>';
+    return;
+  }
+  el.innerHTML = recurring.map(r => `
+    <div class="item">
+      <div class="item-head">
+        <span>📍 ${esc(r.name)}</span>
+        <span class="pill pill-high">${r.caseCount} Cases</span>
+      </div>
+      <div class="meta">
+        <strong>Cases:</strong> ${esc(r.caseIds)}<br>
+        <span style="color:#0284c7;">${esc(r.note)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderProximity(signals) {
+  const el = document.getElementById('proximity-list');
+  if (!signals || !signals.length) {
+    el.innerHTML = '<div style="font-size:11px; color:#64748b;">No spatiotemporal proximity events (&le; 48h) recorded.</div>';
+    return;
+  }
+  el.innerHTML = signals.map(s => `
+    <div class="item">
+      <div class="item-head">
+        <span>⏱️ ${esc(s.locationName)}</span>
+        <span class="pill pill-medium">${s.hoursApart}h apart</span>
+      </div>
+      <div class="meta">
+        <strong>Case ${esc(s.case1)}:</strong> "${esc(s.title1)}" (${esc(s.time1)})<br>
+        <strong>Case ${esc(s.case2)}:</strong> "${esc(s.title2)}" (${esc(s.time2)})<br>
+        <span style="color:#78350f; font-size:10px;">${esc(s.reviewNote)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+loadMapData();
+</script>
+<script src="/app.js"></script>
+</body>
+</html>

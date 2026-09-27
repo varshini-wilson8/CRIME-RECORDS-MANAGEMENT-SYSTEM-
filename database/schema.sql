@@ -1,0 +1,8 @@
+PRAGMA foreign_keys = ON;
+CREATE TABLE IF NOT EXISTS officers (id TEXT PRIMARY KEY, name TEXT NOT NULL, contact TEXT NOT NULL, badge_number TEXT NOT NULL UNIQUE);
+CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, officer_id TEXT UNIQUE, role TEXT NOT NULL CHECK(role IN ('ADMIN','COMMAND_OFFICER','FIELD_AGENT')), FOREIGN KEY(officer_id) REFERENCES officers(id));
+CREATE TABLE IF NOT EXISTS cases (id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT NOT NULL, severity TEXT NOT NULL, status TEXT NOT NULL, opening_date TEXT NOT NULL, assigned_officer_id TEXT, priority INTEGER NOT NULL, FOREIGN KEY(assigned_officer_id) REFERENCES officers(id));
+CREATE TABLE IF NOT EXISTS suspects (id TEXT PRIMARY KEY, name TEXT NOT NULL, contact TEXT NOT NULL, physical_description TEXT NOT NULL, risk_level TEXT NOT NULL, repeat_offender INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS case_suspects (case_id TEXT NOT NULL, suspect_id TEXT NOT NULL, PRIMARY KEY(case_id,suspect_id), FOREIGN KEY(case_id) REFERENCES cases(id) ON DELETE CASCADE, FOREIGN KEY(suspect_id) REFERENCES suspects(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS evidence (id TEXT PRIMARY KEY, case_id TEXT NOT NULL, description TEXT NOT NULL, collection_date TEXT NOT NULL, current_custodian TEXT NOT NULL, FOREIGN KEY(case_id) REFERENCES cases(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS evidence_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, evidence_id TEXT NOT NULL, timestamp TEXT NOT NULL, action_type TEXT NOT NULL, from_custodian TEXT NOT NULL, to_custodian TEXT NOT NULL, remarks TEXT NOT NULL, FOREIGN KEY(evidence_id) REFERENCES evidence(id) ON DELETE CASCADE);

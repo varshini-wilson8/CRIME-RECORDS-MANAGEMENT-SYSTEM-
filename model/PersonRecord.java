@@ -1,0 +1,8 @@
+package model;
+public final class PersonRecord {
+ private final String id,firstName,lastName,dateOfBirth,phone,email,address,physicalDescription,role,notes,linkedCaseDetails;
+ private final int linkedCases,relatedEvents,linkedVehicles;
+ public PersonRecord(String id,String firstName,String lastName,String dateOfBirth,String phone,String email,String address,String physicalDescription,String role,String notes,int linkedCases,int relatedEvents,int linkedVehicles,String linkedCaseDetails){this.id=id;this.firstName=firstName;this.lastName=lastName;this.dateOfBirth=dateOfBirth;this.phone=phone;this.email=email;this.address=address;this.physicalDescription=physicalDescription;this.role=role;this.notes=notes;this.linkedCases=linkedCases;this.relatedEvents=relatedEvents;this.linkedVehicles=linkedVehicles;this.linkedCaseDetails=linkedCaseDetails;}
+ public String getId(){return id;} public String getFirstName(){return firstName;} public String getLastName(){return lastName;} public String getDateOfBirth(){return dateOfBirth;} public String getPhone(){return phone;} public String getEmail(){return email;} public String getAddress(){return address;} public String getPhysicalDescription(){return physicalDescription;} public String getRole(){return role;} public String getNotes(){return notes;} public int getLinkedCases(){return linkedCases;} public int getRelatedEvents(){return relatedEvents;} public int getLinkedVehicles(){return linkedVehicles;} public String getLinkedCaseDetails(){return linkedCaseDetails;}
+ public String getFullName(){String n=((firstName==null?"":firstName)+" "+(lastName==null?"":lastName)).trim();return n.isEmpty()?id:n;}
+}

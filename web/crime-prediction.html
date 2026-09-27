@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRMS 2.0 | Crime Pattern Prediction</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .ai-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .ai-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 22px 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .ai-card-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy);
+      margin: 0 0 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .ai-card-desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 16px;
+    }
+
+    .meta-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .tag-forecast {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+    }
+
+    .tag-history {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+
+    .tag-verified {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .metric-cell {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-top: 4px;
+    }
+
+    .field-group {
+      margin-bottom: 14px;
+    }
+
+    .field-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 5px;
+    }
+
+    .field-group select, .field-group input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .slider-wrap input[type="range"] {
+      flex: 1;
+    }
+
+    .slider-val-badge {
+      min-width: 58px;
+      text-align: center;
+      background: #e2e8f0;
+      padding: 4px 8px;
+      border-radius: 5px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .prob-bar-item {
+      margin-bottom: 14px;
+    }
+
+    .prob-bar-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 5px;
+      color: #1e293b;
+    }
+
+    .prob-track {
+      height: 12px;
+      background: #e2e8f0;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .prob-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0284c7 0%, #0369a1 100%);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    .prob-fill.primary {
+      background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
+    }
+
+    .diurnal-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 120px;
+      padding-top: 20px;
+      border-bottom: 1px solid #cbd5e1;
+      margin-top: 10px;
+    }
+
+    .diurnal-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .diurnal-bar {
+      width: 100%;
+      background: #94a3b8;
+      border-radius: 2px 2px 0 0;
+      min-height: 2px;
+      transition: height 0.3s;
+    }
+
+    .diurnal-bar.peak {
+      background: #0284c7;
+    }
+
+    .diurnal-label {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .epistemic-banner {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.55;
+      margin-top: 20px;
+    }
+
+    .primary-prediction-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .primary-prediction-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #15803d;
+    }
+
+    .primary-prediction-sub {
+      font-size: 11px;
+      color: #166534;
+      margin-top: 2px;
+    }
+
+    .hotspot-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .hotspot-table th, .hotspot-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #edf2f5;
+    }
+
+    .hotspot-table th {
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .hotspot-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 800;
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    @media (max-width: 900px) {
+      .ai-grid { grid-template-columns: 1fr; }
+      .metrics-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark">C</span>
+      <div>
+        <strong>CRMS 2.0</strong>
+        <small>Pattern Forecast</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/cases">Case records</a>
+      <a href="/evidence">Evidence custody</a>
+      <a href="/suspects">Suspects</a>
+      <a href="/officers">Officers</a>
+      <a href="/command-center">Command center</a>
+      <a href="/map">Crime map</a>
+      <a href="/crime-prediction" class="active">Crime prediction</a>
+      <a href="/account">My Account</a>
+    </nav>
+
+    <div class="sidebar-note">
+      Categorical Naive Bayes model trained on historical incident locations and timeframes. Strictly excludes person and suspect data.
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="page-top">
+      <div class="eyebrow">AI-ASSISTED FORECASTING &amp; PATTERN INTELLIGENCE</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <a href="/command-center" class="secondary-btn">Command center</a>
+        <a href="/map" class="secondary-btn">Crime map</a>
+        <a href="/dashboard" class="secondary-btn">Dashboard</a>
+      </div>
+    </div>
+
+    <h1>Crime Pattern Prediction</h1>
+    <p class="subtitle">Descriptive probabilistic crime-pattern forecasting and historical spatio-temporal modeling.</p>
+
+    <!-- Top Grid: Model Information & Scenario Builder -->
+    <div class="ai-grid">
+      <!-- Section 1: Model Information & Validation -->
+      <section class="ai-card">
+        <div class="ai-card-title">
+          <span>Model Architecture &amp; Integrity</span>
+          <span class="meta-tag tag-history">TRAINED MODEL</span>
+        </div>
+        <p class="ai-card-desc">Categorical Naive Bayes with Laplace smoothing ($k=1.0$) trained on genuine historical incident records.</p>
+
+        <div style="font-size: 12px; display: grid; gap: 6px; color: #334155;">
+          <div><strong>Engine:</strong> <span id="mVersion">CRMS-NB-1.0</span></div>
+          <div><strong>Training Records:</strong> <span id="mSamples">—</span> incident cases (1 case = 1 observation)</div>
+          <div><strong>Features Evaluated:</strong> Location Type, Diurnal Time Slot, Day of Week, Spatial Grid ($0.02^\circ$)</div>
+          <div><strong>Validation Method:</strong> <span id="mMethod">Leave-One-Out Cross-Validation (LOOCV)</span></div>
+          <div><strong>Data Support Level:</strong> <span id="mSupport" class="hotspot-badge" style="background:#e0f2fe;color:#0369a1;">LIMITED</span></div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-cell">
+            <div class="metric-label">Accuracy</div>
+            <div class="metric-val" id="valAccuracy">—</div>
+            <div style="font-size:10px; color:#64748b; margin-top:3px;" id="valAccNote">LOOCV validation</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Precision</div>
+            <div class="metric-val" id="valPrecision">—</div>
+            <div style="font-size:10px; color:#64748b; margin-top:3px;" id="valPrecNote">Multiclass macro</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Recall</div>
+            <div class="metric-val" id="valRecall">—</div>
+            <div style="font-size:10px; color:#64748b; margin-top:3px;" id="valRecNote">Multiclass macro</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Macro-F1</div>
+            <div class="metric-val" id="valF1">—</div>
+            <div style="font-size:10px; color:#64748b; margin-top:3px;" id="valF1Note">Harmonic mean</div>
+          </div>
+        </div>
+
+        <div id="evalNoticeBox" style="margin-top: 14px; padding: 12px 14px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; font-size: 11px; color: #92400e; line-height: 1.5;">
+          Loading evaluation status...
+        </div>
+
+        <div style="margin-top: 14px; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; color: #475569; line-height: 1.45;">
+          <strong style="color: #1e293b; display: block; margin-bottom: 4px;">Analytical Distinction Guide:</strong>
+          <div>● <strong>Real Historical Observations:</strong> Active database contains 5 georeferenced incident cases from <code>ccecs.db</code>.</div>
+          <div>◎ <strong>Statistical Forecast Patterns:</strong> Spatiotemporal posterior probability distribution calculated via Naive Bayes.</div>
+          <div>🔬 <strong>Synthetic Benchmark Validation:</strong> Multiclass LOOCV math verified via automated tests (<code>TestCrimePrediction.java</code>), separate from the current single-class production database.</div>
+        </div>
+      </section>
+
+      <!-- Section 2: Scenario Forecast Controls -->
+      <section class="ai-card">
+        <div class="ai-card-title">
+          <span>Scenario Forecast Parameters</span>
+          <span class="meta-tag tag-forecast">INPUT SCENARIO</span>
+        </div>
+        <p class="ai-card-desc">Select geographic and temporal conditions to evaluate probabilistic crime patterns.</p>
+
+        <form id="scenarioForm">
+          <div class="field-group">
+            <label for="locSelect">Reference Incident Scene</label>
+            <select id="locSelect">
+              <option value="">— Select Location (or use custom coordinates) —</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="locTypeSelect">Location Type</label>
+            <select id="locTypeSelect">
+              <option value="">Auto-resolve from location</option>
+              <option value="COMMERCIAL">Commercial</option>
+              <option value="PUBLIC_SPACE">Public Space</option>
+              <option value="VEHICLE_STOP">Vehicle Stop / Highway</option>
+              <option value="WAREHOUSE">Warehouse / Industrial</option>
+              <option value="RESIDENTIAL">Residential</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="daySelect">Day of Week</label>
+            <select id="daySelect">
+              <option value="">Any Day</option>
+              <option value="0">Sunday</option>
+              <option value="1">Monday</option>
+              <option value="2">Tuesday</option>
+              <option value="3">Wednesday</option>
+              <option value="4">Thursday</option>
+              <option value="5" selected>Friday</option>
+              <option value="6">Saturday</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Target Hour of Day</label>
+            <div class="slider-wrap">
+              <input type="range" id="hourSlider" min="0" max="23" value="20" />
+              <span class="slider-val-badge" id="hourDisplay">20:00</span>
+            </div>
+          </div>
+
+          <button type="button" id="runForecastBtn" class="primary-btn full-width" style="margin-top: 10px; padding: 10px; font-weight: 700; cursor: pointer;">
+            Run Pattern Forecast &rarr;
+          </button>
+        </form>
+      </section>
+    </div>
+
+    <!-- Bottom Grid: Crime-Type Probabilities & Spatiotemporal Patterns -->
+    <div class="ai-grid">
+      <!-- Section 3: Crime-Type Likelihood Distribution -->
+      <section class="ai-card">
+        <div class="ai-card-title">
+          <span>Predicted Crime Pattern Likelihood</span>
+          <span class="meta-tag tag-forecast" id="forecastStatusTag">MODEL FORECAST</span>
+        </div>
+        <p class="ai-card-desc">Normalized posterior probability distribution $\sum P(C_k \mid X) = 1.0$ under the selected scenario.</p>
+
+        <div id="scenarioContextBadge" style="margin-bottom: 12px; padding: 7px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; color: #475569; display: flex; justify-content: space-between; align-items: center;">
+          <span>Scenario: <strong id="scenarioContextText" style="color: #1e293b;">Baseline Prior (Awaiting Execution)</strong></span>
+          <span id="scenarioTimestamp" style="color: #64748b; font-size: 10px;">Not executed yet</span>
+        </div>
+
+        <div class="primary-prediction-box" id="primaryBox">
+          <div>
+            <div class="primary-prediction-title" id="primaryCrimeTitle">—</div>
+            <div class="primary-prediction-sub" id="primaryCrimeDesc">Click "Run Pattern Forecast &rarr;" to evaluate conditions.</div>
+          </div>
+          <div style="font-size: 22px; font-weight: 800; color: #15803d;" id="primaryCrimePct">—</div>
+        </div>
+
+        <div id="probBarsList">
+          <div style="color: var(--muted); font-size: 13px; text-align: center; padding: 16px;">
+            Configure parameters above and click <strong>Run Pattern Forecast &rarr;</strong> to compute probabilistic likelihood.
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Temporal & Spatial Hotspot Patterns -->
+      <section class="ai-card">
+        <div class="ai-card-title">
+          <span>Diurnal Cycle &amp; Spatial Hotspots</span>
+          <span class="meta-tag tag-history">HISTORICAL PATTERNS</span>
+        </div>
+        <p class="ai-card-desc">24-hour diurnal risk curve and distance-attenuated density clusters.</p>
+
+        <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 2px;">
+          24-Hour Diurnal Likelihood Curve
+        </div>
+        <div class="diurnal-chart" id="diurnalChart">
+          <!-- 24 bars rendered via JS -->
+        </div>
+
+        <div style="margin-top: 18px; font-size: 12px; font-weight: 700; color: #334155;">
+          Nearby Spatial Density Clusters
+        </div>
+        <table class="hotspot-table">
+          <thead>
+            <tr>
+              <th>Location</th>
+              <th>Distance</th>
+              <th>Risk Density</th>
+            </tr>
+          </thead>
+          <tbody id="hotspotTableBody">
+            <tr><td colspan="3" style="color:var(--muted);text-align:center;">Loading clusters...</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <!-- Epistemic Disclaimer -->
+    <div class="epistemic-banner">
+      <strong>Epistemic &amp; Ethical Safeguard:</strong>
+      Statistical patterns represent descriptive historical frequency distributions across reported incidents.
+      Forecasts do not imply individualized suspicion, certainty of occurrence, or automated legal culpability.
+      Suspect, person, demographic, and risk-score attributes are strictly excluded from the training and prediction engine.
+    </div>
+  </main>
+
+  <script src="/app.js"></script>
+  <script>
+    let knownLocations = [];
+
+    async function initPage() {
+      // 1. Slider binding
+      const hourSlider = document.getElementById('hourSlider');
+      const hourDisplay = document.getElementById('hourDisplay');
+      if (hourSlider && hourDisplay) {
+        hourSlider.addEventListener('input', () => {
+          const val = String(hourSlider.value).padStart(2, '0') + ':00';
+          hourDisplay.textContent = val;
+        });
+      }
+
+      // 2. Location picker binding
+      const locSel = document.getElementById('locSelect');
+      if (locSel) {
+        locSel.addEventListener('change', (e) => {
+          const selId = e.target.value;
+          const loc = knownLocations.find(l => l.id === selId);
+          if (loc && loc.locationType) {
+            document.getElementById('locTypeSelect').value = loc.locationType;
+          }
+        });
+      }
+
+      // 3. Button & Form bindings (wired synchronously before async load)
+      const runBtn = document.getElementById('runForecastBtn');
+      if (runBtn) {
+        runBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          await runScenarioForecast();
+        });
+      }
+
+      const form = document.getElementById('scenarioForm');
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          await runScenarioForecast();
+        });
+      }
+
+      // 4. Load model patterns & baseline
+      await loadModelPatterns();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPage);
+    } else {
+      initPage();
+    }
+
+    async function loadModelPatterns() {
+      try {
+        const res = await fetch('/api/ai/patterns');
+        if (!res.ok) {
+          const txt = await res.text();
+          console.error('Failed to load /api/ai/patterns:', res.status, txt);
+          const noticeBox = document.getElementById('evalNoticeBox');
+          if (noticeBox) noticeBox.textContent = 'Server response error: ' + res.status;
+          return;
+        }
+        const d = await res.json();
+
+        document.getElementById('mVersion').textContent = d.model || 'CRMS-NB-1.0';
+        document.getElementById('mSamples').textContent = d.sampleSize || 0;
+        document.getElementById('mSupport').textContent = d.dataSupportLevel || 'LIMITED';
+
+        const evalObj = d.evaluation || {};
+        if (evalObj.precision == null) {
+          document.getElementById('valAccuracy').textContent = 'Single-class*';
+          document.getElementById('valAccNote').textContent = '*Class-homogeneous';
+          document.getElementById('valPrecision').textContent = 'N/A*';
+          document.getElementById('valPrecNote').textContent = '*Single-class sample';
+          document.getElementById('valRecall').textContent = 'N/A*';
+          document.getElementById('valRecNote').textContent = '*Single-class sample';
+          document.getElementById('valF1').textContent = 'N/A*';
+          document.getElementById('valF1Note').textContent = '*Single-class sample';
+        } else {
+          document.getElementById('valAccuracy').textContent = (evalObj.accuracy * 100).toFixed(0) + '%';
+          document.getElementById('valAccNote').textContent = 'LOOCV validation';
+          document.getElementById('valPrecision').textContent = (evalObj.precision * 100).toFixed(0) + '%';
+          document.getElementById('valPrecNote').textContent = 'Multiclass macro';
+          document.getElementById('valRecall').textContent = (evalObj.recall * 100).toFixed(0) + '%';
+          document.getElementById('valRecNote').textContent = 'Multiclass macro';
+          document.getElementById('valF1').textContent = (evalObj.f1 * 100).toFixed(0) + '%';
+          document.getElementById('valF1Note').textContent = 'Harmonic mean';
+        }
+
+        const noticeBox = document.getElementById('evalNoticeBox');
+        if (evalObj.notice) {
+          noticeBox.innerHTML = `<strong>Data Limitation Notice (Status: ${escapeHtml(evalObj.status || 'LIMITED')}):</strong> ${escapeHtml(evalObj.notice)}`;
+        }
+
+        // Populate location select
+        knownLocations = d.locations || [];
+        const locSelect = document.getElementById('locSelect');
+        locSelect.innerHTML = '<option value="">— Select Location (or use custom coordinates) —</option>';
+        knownLocations.forEach(loc => {
+          const opt = document.createElement('option');
+          opt.value = loc.id;
+          opt.textContent = `${loc.name} (${loc.locationType || 'General'})`;
+          locSelect.appendChild(opt);
+        });
+
+        // Render diurnal chart
+        renderDiurnalChart(d.temporalRiskCurve || []);
+
+        // Render initial baseline hotspots
+        renderHotspotsTable(d.hotspots || []);
+      } catch (err) {
+        console.error('Failed to load patterns:', err);
+      }
+    }
+
+    async function runScenarioForecast() {
+      const runBtn = document.getElementById('runForecastBtn');
+      const locSelect = document.getElementById('locSelect');
+      const locId = locSelect ? locSelect.value : '';
+      const locTypeSelect = document.getElementById('locTypeSelect');
+      const locType = locTypeSelect ? locTypeSelect.value : '';
+      const daySelect = document.getElementById('daySelect');
+      const day = daySelect ? daySelect.value : '';
+      const hourSlider = document.getElementById('hourSlider');
+      const hour = hourSlider ? hourSlider.value : '20';
+
+      const payload = {
+        locationId: locId || null,
+        locationType: locType || null,
+        targetDayOfWeek: day !== '' ? parseInt(day) : null,
+        targetHour: parseInt(hour)
+      };
+
+      console.log('Forecast request:', payload);
+
+      if (runBtn) {
+        runBtn.disabled = true;
+        runBtn.textContent = 'Evaluating Scenario...';
+        runBtn.style.opacity = '0.75';
+      }
+
+      try {
+        const res = await fetch('/api/ai/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload)
+        });
+
+        console.log('Forecast HTTP status:', res.status);
+
+        if (!res.ok) {
+          const errTxt = await res.text();
+          console.error('Forecast API returned HTTP ' + res.status + ':', errTxt);
+          let errMsg = 'Server error ' + res.status;
+          try {
+            const errObj = JSON.parse(errTxt);
+            if (errObj.error) errMsg = errObj.error;
+          } catch (_) {}
+          alert('Forecast error: ' + errMsg);
+          return;
+        }
+
+        const data = await res.json();
+        console.log('Forecast response data:', data);
+
+        let locName = 'All / Custom Locations';
+        if (locSelect && locSelect.selectedIndex > 0) {
+          locName = locSelect.options[locSelect.selectedIndex].text;
+        } else if (locType) {
+          locName = 'Type: ' + locType;
+        }
+        let dayName = 'Any Day';
+        if (daySelect && daySelect.selectedIndex > 0) {
+          dayName = daySelect.options[daySelect.selectedIndex].text;
+        }
+
+        const summaryText = `${locName} • Hour ${String(hour).padStart(2, '0')}:00 • ${dayName}`;
+        const timeStr = new Date().toLocaleTimeString();
+
+        renderPredictionResults(data, summaryText, timeStr);
+
+      } catch (err) {
+        console.error('Forecast request failed:', err);
+        alert('Forecast request failed: ' + (err.message || err));
+      } finally {
+        if (runBtn) {
+          runBtn.disabled = false;
+          runBtn.innerHTML = 'Run Pattern Forecast &rarr;';
+          runBtn.style.opacity = '1.0';
+        }
+      }
+    }
+
+    function renderPredictionResults(d, summaryText, timeStr) {
+      if (summaryText) {
+        const ctxEl = document.getElementById('scenarioContextText');
+        if (ctxEl) ctxEl.textContent = summaryText;
+      }
+      if (timeStr) {
+        const timeEl = document.getElementById('scenarioTimestamp');
+        if (timeEl) timeEl.textContent = 'Evaluated at ' + timeStr;
+      }
+      const statusTag = document.getElementById('forecastStatusTag');
+      if (statusTag) {
+        statusTag.textContent = 'SCENARIO EVALUATED';
+        statusTag.className = 'meta-tag tag-verified';
+      }
+
+      // Visual flash animation on primary box
+      const box = document.getElementById('primaryBox');
+      if (box) {
+        box.style.transition = 'background-color 0.25s ease';
+        box.style.backgroundColor = '#dcfce7';
+        setTimeout(() => {
+          box.style.backgroundColor = '#f0fdf4';
+        }, 350);
+      }
+
+      // Primary callout
+      document.getElementById('primaryCrimeTitle').textContent = d.primaryPredictedType || 'UNKNOWN';
+      const isSingleClass = !d.evaluation || d.evaluation.precision == null;
+      if (isSingleClass) {
+        document.getElementById('primaryCrimeDesc').textContent =
+          "The current historical dataset contains only BURGLARY observations, so the model's available crime-type distribution is dominated by that class. Additional historical crime-type diversity is required for meaningful multiclass comparison.";
+      } else {
+        document.getElementById('primaryCrimeDesc').textContent =
+          "Highest estimated likelihood under current scenario";
+      }
+      const predictions = d.predictions || [];
+      const topPred = predictions[0];
+      if (topPred) {
+        document.getElementById('primaryCrimePct').textContent = topPred.percentage.toFixed(1) + '%';
+      }
+
+      // Render probability bars
+      const listEl = document.getElementById('probBarsList');
+      if (!predictions.length) {
+        listEl.innerHTML = '<div style="color:var(--muted);font-size:12px;">No probability data computed.</div>';
+      } else {
+        listEl.innerHTML = predictions.map((p, idx) => `
+          <div class="prob-bar-item">
+            <div class="prob-bar-head">
+              <span>${escapeHtml(p.crimeType)}</span>
+              <span><strong>${p.percentage.toFixed(1)}%</strong> <small style="color:var(--muted);font-weight:400;">(${p.probability.toFixed(3)})</small></span>
+            </div>
+            <div class="prob-track">
+              <div class="prob-fill ${idx === 0 ? 'primary' : ''}" style="width: ${Math.max(4, p.percentage)}%;"></div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Render spatial hotspots
+      renderHotspotsTable(d.spatialHotspots || []);
+    }
+
+    function renderHotspotsTable(hotspots) {
+      const tbody = document.getElementById('hotspotTableBody');
+      if (!tbody) return;
+      if (!hotspots.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted);text-align:center;">No nearby spatial clusters.</td></tr>';
+      } else {
+        tbody.innerHTML = hotspots.slice(0, 5).map(h => `
+          <tr>
+            <td><strong>${escapeHtml(h.name)}</strong></td>
+            <td>${h.distanceKm} km</td>
+            <td><span class="hotspot-badge">${h.riskDensity} index</span></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function renderDiurnalChart(curve) {
+      const chartEl = document.getElementById('diurnalChart');
+      if (!curve || !curve.length) return;
+
+      const maxProb = Math.max(...curve.map(c => c.probability), 0.01);
+      chartEl.innerHTML = curve.map(c => {
+        const heightPct = Math.max(6, Math.round((c.probability / maxProb) * 100));
+        const isPeak = c.probability === maxProb;
+        return `
+          <div class="diurnal-col" title="${c.hour}:00 - Risk: ${(c.probability * 100).toFixed(1)}% (${c.count} records)">
+            <div class="diurnal-bar ${isPeak ? 'peak' : ''}" style="height: ${heightPct}%;"></div>
+            <span class="diurnal-label">${c.hour % 6 === 0 ? c.hour : ''}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+  </script>
+</body>
+</html>

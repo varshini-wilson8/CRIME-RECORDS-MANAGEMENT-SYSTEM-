@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CCECS | Evidence Custody</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .filter-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .filter-bar select { width: auto; min-width: 180px; }
+    .filter-bar input[type="search"] { flex: 1; min-width: 240px; }
+    .badge-count { display: inline-block; background: #e0eef7; color: #1b7db7; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+    .custody-badge { background: #eef7f2; color: #2b9b6d; border: 1px solid #b8dfc8; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .evidence-grid { display: grid; gap: 16px; }
+    .evidence-card {
+      background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: transform 0.12s;
+    }
+    .evidence-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 10px; }
+    .evidence-id { font-size: 17px; font-weight: 800; color: var(--navy); }
+    .evidence-desc { font-size: 14px; color: #2e3e4a; margin: 4px 0 8px; }
+    .evidence-meta { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-bottom: 12px; align-items: center; }
+    .custody-timeline { border-left: 2px solid #dbe5ec; margin: 12px 0 14px 10px; padding-left: 14px; display: grid; gap: 8px; }
+    .custody-step { position: relative; font-size: 12px; color: #435460; }
+    .custody-step::before {
+      content: ""; position: absolute; left: -19px; top: 4px; width: 8px; height: 8px;
+      border-radius: 50%; background: #1b7db7;
+    }
+    .custody-time { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .custody-route { font-weight: 700; color: #1a2933; margin: 2px 0; }
+    .custody-remarks { font-style: italic; color: #60727f; font-size: 11px; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark">C</span>
+      <div>
+        <strong>CCECS</strong>
+        <small>Case Command</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/cases">Case records</a>
+      <a href="/evidence" class="active">Evidence custody</a>
+      <a href="/suspects">Suspects</a>
+      <a href="/officers">Officers</a>
+      <a href="/command-center">Command center</a>
+      <a href="/map">Crime map</a>
+    </nav>
+
+    <div class="sidebar-note">
+      Every physical and digital item is tracked with an immutable chain of custody log with verifiable timestamps.
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="page-top">
+      <div class="eyebrow">FORENSICS &amp; EVIDENCE REPOSITORY</div>
+      <button id="open-evidence" class="primary-btn">+ Add evidence</button>
+    </div>
+
+    <h1>Evidence custody trail <span id="evidence-count" class="badge-count">0</span></h1>
+    <p class="subtitle">Complete verifiable chain-of-custody transfer logs, current custodian accountability, and case links.</p>
+
+    <div class="filter-bar">
+      <input id="search" type="search" placeholder="Search by evidence ID, description, custodian, or case ID…" />
+      <select id="case-filter">
+        <option value="">All cases</option>
+      </select>
+    </div>
+
+    <section id="evidence-list" class="evidence-grid">
+      <div class="empty-row">Loading evidence custody records…</div>
+    </section>
+  </main>
+
+  <dialog id="evidence-dialog">
+    <form id="evidence-form" method="dialog">
+      <div class="dialog-header">
+        <div>
+          <p class="dialog-tag">Chain of custody</p>
+          <h2>Register new evidence</h2>
+        </div>
+        <button type="button" class="close-btn" data-close="evidence-dialog">×</button>
+      </div>
+
+      <label>
+        Associated Case
+        <select name="caseId" id="case-select-input" required></select>
+      </label>
+      <label>
+        Evidence ID
+        <input name="evidenceId" placeholder="e.g. E-041-B" required />
+      </label>
+      <label>
+        Description &amp; Type
+        <textarea name="description" placeholder="Physical or digital item description, collection location, serials" required></textarea>
+      </label>
+      <label>
+        Initial custodian
+        <input name="custodian" placeholder="Collecting officer or forensics unit" required />
+      </label>
+      <p class="error"></p>
+      <button type="submit" class="primary-btn full-width">Add evidence</button>
+    </form>
+  </dialog>
+
+  <dialog id="transfer-dialog">
+    <form id="transfer-form" method="dialog">
+      <div class="dialog-header">
+        <div>
+          <p class="dialog-tag">Custody transfer</p>
+          <h2 id="transfer-title">Transfer evidence</h2>
+        </div>
+        <button type="button" class="close-btn" data-close="transfer-dialog">×</button>
+      </div>
+
+      <input type="hidden" name="evidenceId" />
+      <label>
+        Transfer to (New Custodian)
+        <input name="transferTo" placeholder="Recipient officer, lab technician, or unit" required />
+      </label>
+      <label>
+        Transfer remarks &amp; reason
+        <textarea name="remarks" placeholder="Purpose of transfer (e.g. ballistics examination, secure court storage)" required></textarea>
+      </label>
+      <p class="error"></p>
+      <button type="submit" class="primary-btn full-width">Record transfer</button>
+    </form>
+  </dialog>
+
+  <script>
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+
+    let evidence = [];
+    let cases = [];
+
+    async function api(url, options = {}) {
+      const response = await fetch(url, { credentials: 'same-origin', ...options });
+      if (response.status === 401 || response.status === 403) {
+        window.location.href = '/login';
+        throw new Error('Your session is no longer valid.');
+      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    async function load() {
+      try {
+        const [loadedEvidence, loadedCases] = await Promise.all([
+          api('/api/evidence'),
+          api('/api/cases')
+        ]);
+        evidence = Array.isArray(loadedEvidence) ? loadedEvidence : [];
+        cases = Array.isArray(loadedCases) ? loadedCases : [];
+
+        populateCaseDropdowns();
+      } catch (err) {
+        console.error('Evidence load error', err);
+      }
+      render();
+    }
+
+    function populateCaseDropdowns() {
+      const filterSelect = document.getElementById('case-filter');
+      const dialogSelect = document.getElementById('case-select-input');
+      
+      const optionsHtml = cases.map((c) => `<option value="${esc(c.caseId)}">${esc(c.caseId)} - ${esc(c.title)}</option>`).join('');
+      filterSelect.innerHTML = '<option value="">All cases</option>' + optionsHtml;
+      dialogSelect.innerHTML = optionsHtml;
+    }
+
+    function render() {
+      const q = (document.getElementById('search').value || '').toLowerCase().trim();
+      const selectedCase = document.getElementById('case-filter').value;
+
+      const filtered = evidence.filter((item) => {
+        if (selectedCase && item.caseId !== selectedCase) return false;
+        if (q) {
+          const target = `${item.evidenceId} ${item.description} ${item.caseId} ${item.custodian}`.toLowerCase();
+          return target.includes(q);
+        }
+        return true;
+      });
+
+      document.getElementById('evidence-count').textContent = filtered.length;
+      const container = document.getElementById('evidence-list');
+
+      if (!filtered.length) {
+        container.innerHTML = '<div class="empty-row">No matching evidence records found.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map((item) => {
+        const logs = item.logs || [];
+        return `
+          <div class="evidence-card">
+            <div class="evidence-card-top">
+              <div>
+                <div class="evidence-id">${esc(item.evidenceId)}</div>
+                <div class="evidence-desc">${esc(item.description)}</div>
+              </div>
+              <div>
+                <span class="custody-badge">Custodian: ${esc(item.custodian)}</span>
+              </div>
+            </div>
+
+            <div class="evidence-meta">
+              <span>Linked Case: <a href="/investigation?caseId=${encodeURIComponent(item.caseId)}" style="color:var(--blue);font-weight:700;">${esc(item.caseId)}</a></span>
+              <span>&bull;</span>
+              <span><strong>${logs.length}</strong> Custody Transfer Event(s)</span>
+            </div>
+
+            <div class="custody-timeline">
+              ${logs.map((log) => `
+                <div class="custody-step">
+                  <div class="custody-time">${esc(log.time)}</div>
+                  <div class="custody-route">${esc(log.from)} &rarr; ${esc(log.to)}</div>
+                  <div class="custody-remarks">${esc(log.remarks)}</div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="card-footer">
+              <a class="investigate-btn" href="/investigation?caseId=${encodeURIComponent(item.caseId)}" style="margin-left:0;">Open case investigation &rarr;</a>
+              <button class="primary-btn transfer-btn" data-evidence="${esc(item.evidenceId)}" style="padding:7px 14px;font-size:12px;">Transfer custody</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showDialog(id) {
+      const d = document.getElementById(id);
+      if (d) d.showModal();
+    }
+    function closeDialog(id) {
+      const d = document.getElementById(id);
+      if (d) d.close();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-close]').forEach((btn) => {
+        btn.addEventListener('click', () => closeDialog(btn.dataset.close));
+      });
+
+      document.getElementById('open-evidence').addEventListener('click', () => {
+        document.getElementById('evidence-form').reset();
+        showDialog('evidence-dialog');
+      });
+
+      document.getElementById('search').addEventListener('input', render);
+      document.getElementById('case-filter').addEventListener('change', render);
+
+      document.getElementById('evidence-list').addEventListener('click', (e) => {
+        const btn = e.target.closest('.transfer-btn');
+        if (!btn) return;
+        const evId = btn.dataset.evidence;
+        const form = document.getElementById('transfer-form');
+        form.reset();
+        form.querySelector('[name="evidenceId"]').value = evId;
+        document.getElementById('transfer-title').textContent = `Transfer Custody of ${evId}`;
+        showDialog('transfer-dialog');
+      });
+
+      document.getElementById('evidence-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const errorBox = form.querySelector('.error');
+        errorBox.textContent = '';
+        try {
+          const payload = new URLSearchParams(new FormData(form));
+          await api('/api/evidence', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: payload.toString()
+          });
+          closeDialog('evidence-dialog');
+          await load();
+        } catch (err) {
+          errorBox.textContent = err.message;
+        }
+      });
+
+      document.getElementById('transfer-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const errorBox = form.querySelector('.error');
+        errorBox.textContent = '';
+        try {
+          const payload = new URLSearchParams(new FormData(form));
+          await api('/api/evidence', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: payload.toString()
+          });
+          closeDialog('transfer-dialog');
+          await load();
+        } catch (err) {
+          errorBox.textContent = err.message;
+        }
+      });
+
+      load();
+    });
+  </script>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CCECS | Case Records</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .filter-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+    .filter-bar select { width: auto; min-width: 150px; }
+    .filter-bar input[type="search"] { flex: 1; min-width: 240px; }
+    .table-actions { display: flex; gap: 10px; align-items: center; }
+    .badge-count { display: inline-block; background: #e0eef7; color: #1b7db7; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark">C</span>
+      <div>
+        <strong>CCECS</strong>
+        <small>Case Command</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/cases" class="active">Case records</a>
+      <a href="/evidence">Evidence custody</a>
+      <a href="/suspects">Suspects</a>
+      <a href="/officers">Officers</a>
+      <a href="/command-center">Command center</a>
+      <a href="/map">Crime map</a>
+      <a href="/crime-prediction">Crime prediction</a>
+    </nav>
+
+    <div class="sidebar-note">
+      Priority = severity weight × 10 + days open. New cases are automatically assigned to the least-loaded officer.
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="page-top">
+      <div class="eyebrow">CASE RECORDS MANAGEMENT</div>
+      <button id="open-case" class="primary-btn">+ Create case</button>
+    </div>
+
+    <h1>Case records <span id="case-count" class="badge-count">0</span></h1>
+    <p class="subtitle">Search, filter, manage case status, and launch deep investigation workspaces.</p>
+
+    <section class="panel table-panel">
+      <div class="panel-header" style="flex-direction: column; align-items: stretch; gap: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+          <div>
+            <h2>All registered cases</h2>
+            <p>Sorted by calculated priority (highest first).</p>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input id="search" type="search" placeholder="Search by case ID, title, or description…" />
+          <select id="severity-filter">
+            <option value="">All severities</option>
+            <option value="CRITICAL">Critical</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+          <select id="status-filter">
+            <option value="">All statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="UNDER_INVESTIGATION">Under investigation</option>
+            <option value="CLOSED">Closed</option>
+            <option value="COLD">Cold</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Case</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Assigned officer</th>
+              <th>Priority</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="case-list">
+            <tr><td colspan="6" class="empty-row">Loading case records…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="case-dialog">
+    <form id="case-form" method="dialog">
+      <div class="dialog-header">
+        <div>
+          <p id="case-mode" class="dialog-tag">New record</p>
+          <h2 id="case-heading">Create a case</h2>
+        </div>
+        <button type="button" class="close-btn" data-close="case-dialog">×</button>
+      </div>
+
+      <label>
+        Case ID
+        <input name="caseId" placeholder="e.g. C-2026-050" required />
+      </label>
+      <label>
+        Case title
+        <input name="title" placeholder="Brief descriptive title" required />
+      </label>
+      <label>
+        Description
+        <textarea name="description" placeholder="Summary of incident and investigation objectives" required></textarea>
+      </label>
+
+      <div class="field-grid">
+        <label>
+          Severity
+          <select name="severity">
+            <option>LOW</option>
+            <option selected>MEDIUM</option>
+            <option>HIGH</option>
+            <option>CRITICAL</option>
+          </select>
+        </label>
+        <label>
+          Status
+          <select name="status">
+            <option selected>OPEN</option>
+            <option>UNDER_INVESTIGATION</option>
+            <option>CLOSED</option>
+            <option>COLD</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="field-grid edit-only" style="display:none;">
+        <label>
+          Date opened
+          <input type="date" name="opened" />
+        </label>
+        <label>
+          Assigned officer
+          <select name="officerId"></select>
+        </label>
+      </div>
+
+      <p id="case-note" class="form-note">An officer is assigned automatically based on current workload.</p>
+      <p id="case-error" class="error"></p>
+      <button type="submit" class="primary-btn full-width">Save case</button>
+    </form>
+  </dialog>
+
+  <script>
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+    const prettyStatus = (v) => String(v ?? '').replace(/_/g, ' ');
+    const statusClass = (v) => String(v ?? '').toLowerCase().replace(/ /g, '_');
+
+    let cases = [];
+    let officers = [];
+    let editing = false;
+
+    async function api(url, options = {}) {
+      const response = await fetch(url, { credentials: 'same-origin', ...options });
+      if (response.status === 401 || response.status === 403) {
+        window.location.href = '/login';
+        throw new Error('Your session is no longer valid.');
+      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    async function load() {
+      try {
+        const [loadedCases, loadedOfficers] = await Promise.all([
+          api('/api/cases'),
+          api('/api/officers').catch(() => [])
+        ]);
+        cases = Array.isArray(loadedCases) ? loadedCases : [];
+        officers = Array.isArray(loadedOfficers) ? loadedOfficers : [];
+      } catch (err) {
+        console.error('Load error', err);
+      }
+      render();
+    }
+
+    function render() {
+      const q = (document.getElementById('search').value || '').toLowerCase().trim();
+      const sev = document.getElementById('severity-filter').value;
+      const st = document.getElementById('status-filter').value;
+
+      const filtered = [...cases]
+        .sort((a, b) => Number(b.priority || 0) - Number(a.priority || 0))
+        .filter((c) => {
+          if (sev && c.severity !== sev) return false;
+          if (st && c.status !== st) return false;
+          if (q) {
+            const target = `${c.caseId} ${c.title} ${c.description || ''} ${c.officer || ''}`.toLowerCase();
+            return target.includes(q);
+          }
+          return true;
+        });
+
+      document.getElementById('case-count').textContent = filtered.length;
+
+      const tbody = document.getElementById('case-list');
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-row">No matching case records found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((item) => `
+        <tr>
+          <td>
+            <span class="case-title">${esc(item.title)}</span>
+            <span class="case-id">ID: <strong>${esc(item.caseId)}</strong> &bull; Opened ${esc(item.opened)}</span>
+          </td>
+          <td><span class="pill ${statusClass(item.severity)}">${esc(prettyStatus(item.severity))}</span></td>
+          <td><span class="pill ${statusClass(item.status)}">${esc(prettyStatus(item.status))}</span></td>
+          <td>${esc(item.officer || 'Unassigned')}</td>
+          <td class="case-priority"><strong>${esc(item.priority || 0)}</strong></td>
+          <td>
+            <div class="table-actions">
+              <button class="edit-btn" data-id="${esc(item.caseId)}">Edit</button>
+              <a class="investigate-btn" href="/investigation?caseId=${encodeURIComponent(item.caseId)}">Investigate &rarr;</a>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function showDialog(id) {
+      const d = document.getElementById(id);
+      if (d) d.showModal();
+    }
+    function closeDialog(id) {
+      const d = document.getElementById(id);
+      if (d) d.close();
+    }
+
+    function openCaseForm(mode = 'new', caseItem = null) {
+      editing = mode === 'edit';
+      const form = document.getElementById('case-form');
+      if (!form) return;
+      form.reset();
+
+      const idField = form.querySelector('[name="caseId"]');
+      const editOnly = form.querySelector('.edit-only');
+      const note = document.getElementById('case-note');
+      const heading = document.getElementById('case-heading');
+      const caseMode = document.getElementById('case-mode');
+      const errorBox = document.getElementById('case-error');
+      if (errorBox) errorBox.textContent = '';
+
+      const officerSelect = form.querySelector('[name="officerId"]');
+      officerSelect.innerHTML = officers.map((o) => `<option value="${esc(o.id)}">${esc(o.name)} (${esc(o.activeCases || 0)} active)</option>`).join('');
+
+      if (mode === 'new') {
+        idField.removeAttribute('readonly');
+        editOnly.style.display = 'none';
+        note.textContent = 'An officer is assigned automatically based on current workload.';
+        heading.textContent = 'Create a case';
+        caseMode.textContent = 'New record';
+      } else if (caseItem) {
+        idField.setAttribute('readonly', true);
+        editOnly.style.display = 'grid';
+        note.textContent = 'Priority updates automatically when severity or status changes.';
+        heading.textContent = 'Update case details';
+        caseMode.textContent = 'Edit record';
+
+        form.querySelector('[name="caseId"]').value = caseItem.caseId;
+        form.querySelector('[name="title"]').value = caseItem.title;
+        form.querySelector('[name="description"]').value = caseItem.description || '';
+        form.querySelector('[name="severity"]').value = caseItem.severity;
+        form.querySelector('[name="status"]').value = caseItem.status;
+        form.querySelector('[name="opened"]').value = caseItem.opened;
+        const matched = officers.find((o) => o.name === caseItem.officer);
+        if (matched) officerSelect.value = matched.id;
+      }
+      showDialog('case-dialog');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-close]').forEach((btn) => {
+        btn.addEventListener('click', () => closeDialog(btn.dataset.close));
+      });
+
+      document.getElementById('open-case').addEventListener('click', () => openCaseForm('new'));
+      document.getElementById('search').addEventListener('input', render);
+      document.getElementById('severity-filter').addEventListener('change', render);
+      document.getElementById('status-filter').addEventListener('change', render);
+
+      document.getElementById('case-list').addEventListener('click', (e) => {
+        const btn = e.target.closest('.edit-btn');
+        if (!btn) return;
+        const c = cases.find((x) => x.caseId === btn.dataset.id);
+        if (c) openCaseForm('edit', c);
+      });
+
+      document.getElementById('case-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const errorBox = document.getElementById('case-error');
+        errorBox.textContent = '';
+        try {
+          const payload = new URLSearchParams(new FormData(form));
+          await api('/api/cases', {
+            method: editing ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: payload.toString()
+          });
+          closeDialog('case-dialog');
+          await load();
+        } catch (err) {
+          errorBox.textContent = err.message;
+        }
+      });
+
+      load();
+    });
+  </script>
+  <script src="/app.js"></script>
+</body>
+</html>

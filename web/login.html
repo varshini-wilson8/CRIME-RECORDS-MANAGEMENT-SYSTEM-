@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRMS 2.0 — Secure Sign In</title>
+  <style>
+    :root {
+      --bg-dark: #07131d;
+      --navy-deep: #0c1e2d;
+      --navy-card: #11283c;
+      --navy-border: #1d3b56;
+      --accent-blue: #1e88e5;
+      --accent-blue-hover: #1565c0;
+      --text-main: #f0f6fc;
+      --text-muted: #8ba2b5;
+      --text-dim: #5c758a;
+      --error-bg: #3c1418;
+      --error-border: #842029;
+      --error-text: #ea868f;
+      --success-bg: #0f2e22;
+      --success-border: #198754;
+      --success-text: #75b798;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 50% 20%, #102a3e 0%, var(--bg-dark) 85%);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .brand-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(30,136,229,0.2) 0%, rgba(15,45,61,0.6) 100%);
+      border: 1px solid rgba(30,136,229,0.4);
+      color: #90caf9;
+      font-weight: 800;
+      font-size: 26px;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    }
+
+    .brand-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.45;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+
+    .login-card {
+      background: var(--navy-card);
+      border: 1px solid var(--navy-border);
+      border-radius: 14px;
+      padding: 34px 32px 30px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+    }
+
+    .card-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .card-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+    }
+
+    .alert {
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .alert.error {
+      display: block;
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: var(--error-text);
+    }
+
+    .alert.success {
+      display: block;
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      color: var(--success-text);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 44px;
+      background: #091724;
+      border: 1px solid var(--navy-border);
+      border-radius: 8px;
+      color: #ffffff;
+      font-size: 14px;
+      padding: 0 14px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.25);
+    }
+
+    .password-input {
+      padding-right: 44px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 4px;
+      top: 4px;
+      bottom: 4px;
+      width: 36px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: color 0.15s;
+    }
+
+    .toggle-password:hover {
+      color: #ffffff;
+    }
+
+    .toggle-password svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .submit-btn {
+      width: 100%;
+      height: 46px;
+      background: var(--accent-blue);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s, transform 0.1s;
+      margin-top: 10px;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      background: var(--accent-blue-hover);
+      transform: translateY(-1px);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .card-footer {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .footer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: #64b5f6;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .system-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="brand-header">
+      <div class="brand-logo" aria-hidden="true">C</div>
+      <h1 class="brand-title">CRMS 2.0</h1>
+      <p class="brand-subtitle">Intelligent Crime Investigation &amp; Case Management System</p>
+    </div>
+
+    <div class="login-card">
+      <h2 class="card-title">Sign in to your account</h2>
+      <p class="card-meta">Authorized Law Enforcement &amp; Command Personnel Only</p>
+
+      <div id="alertBox" class="alert" role="alert"></div>
+
+      <form id="loginForm" method="POST" action="/login">
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="username"
+              name="username"
+              class="form-input"
+              autocomplete="username"
+              required
+              autofocus
+              placeholder="e.g. admin, commander, fieldagent"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-wrapper">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input password-input"
+              autocomplete="current-password"
+              required
+              placeholder="Enter your security password"
+            />
+            <button
+              type="button"
+              id="togglePassword"
+              class="toggle-password"
+              aria-label="Toggle password visibility"
+              tabindex="-1"
+            >
+              <svg id="eyeOpen" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg id="eyeClosed" viewBox="0 0 24 24" style="display:none;">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="submit-btn">
+          <span class="spinner" id="spinner"></span>
+          <span id="btnText">Sign In</span>
+        </button>
+
+        <div class="card-footer">
+          <div class="footer-badge">
+            <span>🛡️</span> Secure Role-Based Access (RBAC)
+          </div>
+          <div>All login attempts and session activities are recorded for audit compliance.</div>
+        </div>
+      </form>
+    </div>
+
+    <div class="system-footer">
+      CRMS 2.0 &bull; Secure Operations &bull; Standalone Node
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const form = document.getElementById('loginForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const spinner = document.getElementById('spinner');
+      const alertBox = document.getElementById('alertBox');
+      const passwordInput = document.getElementById('password');
+      const togglePassword = document.getElementById('togglePassword');
+      const eyeOpen = document.getElementById('eyeOpen');
+      const eyeClosed = document.getElementById('eyeClosed');
+
+      // Check URL query params for status
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('loggedOut') === 'true') {
+        alertBox.className = 'alert success';
+        alertBox.textContent = 'You have been securely signed out.';
+      } else if (params.get('error')) {
+        alertBox.className = 'alert error';
+        alertBox.textContent = 'Invalid username or password.';
+      }
+
+      // Password visibility toggle
+      togglePassword.addEventListener('click', function() {
+        const isPassword = passwordInput.getAttribute('type') === 'password';
+        passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+        eyeOpen.style.display = isPassword ? 'none' : 'block';
+        eyeClosed.style.display = isPassword ? 'block' : 'none';
+        passwordInput.focus();
+      });
+
+      // Submit handling with clean feedback
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        alertBox.style.display = 'none';
+
+        const username = document.getElementById('username').value.trim();
+        const password = passwordInput.value;
+
+        if (!username || !password) {
+          alertBox.className = 'alert error';
+          alertBox.textContent = 'Please enter both username and password.';
+          return;
+        }
+
+        // Set loading state
+        submitBtn.disabled = true;
+        spinner.style.display = 'inline-block';
+        btnText.textContent = 'Authenticating...';
+
+        try {
+          const body = new URLSearchParams();
+          body.append('username', username);
+          body.append('password', password);
+
+          const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: body.toString()
+          });
+
+          if (response.ok) {
+            btnText.textContent = 'Redirecting...';
+            window.location.replace('/dashboard');
+          } else {
+            submitBtn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = 'Sign In';
+            alertBox.className = 'alert error';
+            alertBox.textContent = 'Invalid username or password.';
+            passwordInput.value = '';
+            passwordInput.focus();
+          }
+        } catch (err) {
+          // If fetch fails (network), fallback to traditional form submit
+          form.submit();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

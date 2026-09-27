@@ -1,0 +1,9 @@
+[DEMO/TEST DATA - FICTIONAL EVIDENCE FIXTURE FOR CRMS INTEGRITY TESTING]
+Evidence ID: E-044-B
+Case ID: C-2026-044
+System: Warehouse Electronic Access Control Log
+Export Window: 2026-03-20T20:00:00 to 2026-03-20T21:00:00
+Classification: Fictional demonstration fixture for technical integrity verification
+Events:
+20:10:00 - Card Reader 01 (Front Entrance) - Employee Badge #4021 - ACCESS_GRANTED
+20:32:00 - Card Reader 04 (Rear Service Entrance) - Emergency Push Bar Active - SENSOR_TRIPPED

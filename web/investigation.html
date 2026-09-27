@@ -1,0 +1,1226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRMS 2.0 | Investigation Intelligence Workspace</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .workspace-top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px}
+    .back-link{color:#1b7db7;text-decoration:none;font-weight:700;font-size:13px}
+    .case-header{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:start}
+    .case-kicker{color:#1b7db7;text-transform:uppercase;letter-spacing:.1em;font-size:11px;font-weight:700}
+    .case-header h1{margin:5px 0 6px}
+    .case-description{color:#6c7d8a;margin:0;max-width:850px}
+    .header-actions{display:flex;gap:10px}
+
+    /* Workspace Tabbed Navigation */
+    .workspace-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 24px;border-bottom:1px solid #d8e0e6;padding-bottom:10px}
+    .tab-btn{padding:9px 15px;border:1px solid #d8e0e6;border-radius:6px;background:#fff;color:#536b7c;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+    .tab-btn:hover{background:#f0f4f7;color:#0f2d3d}
+    .tab-btn.active{background:#0f2d3d;color:#fff;border-color:#0f2d3d}
+
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+
+    /* Epistemological Timeline */
+    .timeline{padding:22px}
+    .timeline-item{display:grid;grid-template-columns:130px 20px 1fr;gap:14px;min-height:100px}
+    .timeline-time{font-size:12px;font-weight:700;color:#536b7c;text-align:right;padding-top:2px}
+    .timeline-dot{position:relative}
+    .timeline-dot:before{content:"";position:absolute;top:4px;left:4px;width:10px;height:10px;border-radius:50%;background:#1b7db7;border:3px solid #dcecf7;box-sizing:content-box}
+    .timeline-dot:after{content:"";position:absolute;top:20px;left:9px;width:2px;height:calc(100% - 10px);background:#d8e0e6}
+    .timeline-item:last-child .timeline-dot:after{display:none}
+    .event-card{border:1px solid #d8e0e6;border-radius:8px;padding:14px 16px;background:#fff}
+    .event-title{font-weight:700;margin-bottom:6px;font-size:15px}
+    .event-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+
+    .badge{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    .badge-fact{background:#e2f4ed;color:#187950;border:1px solid #b7e3d1}
+    .badge-reported{background:#fdf2e4;color:#b67319;border:1px solid #f6d8b2}
+    .badge-inferred{background:#ede8f7;color:#6741aa;border:1px solid #d4c7f0}
+    .badge-unverified{background:#f0f3f5;color:#687c8b;border:1px solid #d0dbe2}
+
+    .status-badge{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.05em}
+    .status-verified{background:#dff1ea;color:#2b9b6d}
+    .status-pending_review{background:#f5e6d4;color:#cf8d2a}
+    .status-contradicted{background:#f7dfe0;color:#d75c5c}
+    .status-unverified{background:#eceff2;color:#607382}
+
+    /* Timeline Gap Callout */
+    .timeline-gap-container{margin:8px 0 16px;display:grid;grid-template-columns:130px 20px 1fr;gap:14px}
+    .gap-card{border:1px dashed #d99938;background:#fffbf2;border-radius:8px;padding:14px 18px}
+    .gap-badge{display:inline-flex;padding:3px 8px;border-radius:4px;background:#faecd7;color:#9b6014;font-size:10px;font-weight:800;letter-spacing:.08em}
+    .gap-time{font-size:15px;font-weight:800;color:#2c3a44;margin:6px 0 4px}
+    .gap-disclaimer{margin:4px 0 10px;font-size:12px;color:#7a6540;line-height:1.45;font-style:italic}
+    .gap-action-btn{background:#fff;border:1px solid #d8be92;border-radius:6px;padding:7px 12px;font-size:11px;font-weight:700;color:#7e5210;cursor:pointer}
+    .gap-action-btn:hover{background:#f9f0df}
+
+    /* ACH Hypotheses Matrix */
+    .ach-section{margin-top:10px}
+    .disclaimer-banner{padding:12px 16px;border-radius:8px;background:#f3f6f8;border-left:4px solid #1b7db7;color:#355368;font-size:12px;line-height:1.5;margin-bottom:18px}
+    .matrix-wrap{overflow-x:auto;border:1px solid #d8e0e6;border-radius:8px;background:#fff}
+    .ach-table{width:100%;border-collapse:collapse;min-width:750px}
+    .ach-table th{background:#f7f9fa;padding:14px;border:1px solid #e2e8ed;text-align:left;vertical-align:top}
+    .ach-table td{padding:14px;border:1px solid #e2e8ed;vertical-align:middle}
+    .hyp-header{display:grid;gap:5px}
+    .hyp-code{font-size:16px;font-weight:800;color:#0f2d3d}
+    .hyp-title{font-size:13px;font-weight:700;color:#314a5c}
+    .hyp-desc{font-size:11px;color:#6c7d8a;line-height:1.4}
+    .hyp-counts{margin-top:8px;padding-top:8px;border-top:1px solid #e2e8ed;font-size:11px;color:#5a7080;display:grid;gap:3px}
+    .hyp-status-select{margin-top:8px;width:100%;padding:5px;border:1px solid #cfd9df;border-radius:5px;font-size:11px}
+    .rel-cell-btn{display:inline-flex;align-items:center;justify-content:center;padding:7px 12px;border-radius:6px;font-weight:800;font-size:11px;cursor:pointer;border:1px solid transparent;width:100%}
+    .rel-supports{background:#e2f4ed;color:#187950;border-color:#b7e3d1}
+    .rel-contradicts{background:#fae5e6;color:#c73638;border-color:#f2b8b9}
+    .rel-context{background:#e9f2f8;color:#1b7db7;border-color:#bcdcf0}
+    .rel-unassessed{background:#f3f6f8;color:#788c9a;border-color:#d4dfe6}
+
+    /* Evidence Cards & File Integrity */
+    .evidence-grid{display:grid;gap:14px}
+    .evidence-card{border:1px solid #d8e0e6;border-radius:8px;padding:16px;background:#fff}
+    .evidence-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+    .evidence-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0;padding:10px 0;border-top:1px solid #edf1f4;border-bottom:1px solid #edf1f4;font-size:12px}
+    .hash-badge{padding:4px 8px;border-radius:4px;font-family:monospace;font-size:11px;background:#f3f6f8;color:#2c3a44;word-break:break-all}
+    .demo-tag{display:inline-block;padding:2px 7px;border-radius:4px;background:#fdf0dd;color:#b67215;font-weight:800;font-size:10px;margin-left:6px}
+
+    /* Readiness Indicator Breakdown */
+    .readiness-container{border:1px solid #d8e0e6;border-radius:8px;background:#fff;padding:18px;margin-bottom:20px}
+    .readiness-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+    .readiness-score-big{font-size:32px;font-weight:800;color:#0f2d3d}
+    .readiness-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+    .readiness-item{border:1px solid #e7ecef;border-radius:7px;padding:10px 12px;background:#fbfcfd}
+    .readiness-item-title{font-size:11px;color:#6c7d8a;font-weight:700;display:flex;justify-content:space-between}
+    .readiness-bar{height:6px;background:#e9eef2;border-radius:999px;overflow:hidden;margin-top:6px}
+    .readiness-bar-fill{height:100%;background:#1b7db7;border-radius:999px}
+
+    /* Print & Package Styles */
+    .package-panel{background:#fff;border:1px solid #d8e0e6;border-radius:8px;padding:20px}
+    .package-content{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;background:#fbfcfd;padding:18px;border:1px solid #e5eaed;border-radius:6px;max-height:550px;overflow:auto}
+    @media print{
+      body{display:block;background:#fff;color:#000}
+      .sidebar, .workspace-nav, .header-actions, .gap-action-btn, button, select, input, .workspace-top{display:none!important}
+      .content{padding:0}
+      .package-content{max-height:none;overflow:visible;background:transparent;border:0;padding:0}
+      .package-panel{border:0;padding:0}
+    }
+
+    /* People & Tasks & Graph */
+    .people-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .person-card{border:1px solid #d8e0e6;border-radius:9px;padding:16px;background:#fff}
+    .role-badge{display:inline-flex;padding:4px 9px;border-radius:999px;background:#e8f0f5;color:#31576b;font-size:10px;font-weight:800}
+    .task-list{display:grid;gap:10px}
+    .task-card{border:1px solid #d8e0e6;border-radius:8px;padding:14px;background:#fff}
+    .audit-list{display:grid;gap:8px}
+    .audit-item{display:grid;grid-template-columns:150px 1fr;gap:14px;border:1px solid #d8e0e6;border-radius:8px;padding:12px;background:#fff}
+    .graph-wrap{position:relative;background:#fbfcfd;border:1px solid #d8e0e6;border-radius:8px;overflow:hidden;padding:14px}
+    .graph-canvas{width:100%;height:480px;background:#fff;border-radius:6px}
+    .graph-tooltip{position:absolute;display:none;background:rgba(15,45,61,.94);color:#fff;padding:8px 12px;border-radius:6px;font-size:11px;pointer-events:none;z-index:10}
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="mark">C</span><div><strong>CRMS 2.0</strong><small>Investigation</small></div></div>
+    <nav class="nav">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/cases">Case records</a>
+      <a class="active" href="/investigation">Investigation</a>
+      <a href="/command-center">Command center</a>
+      <a href="/map">Crime map</a>
+      <a href="/evidence">Evidence custody</a>
+      <a href="/suspects">Suspects</a>
+      <a href="/officers">Officers</a>
+    </nav>
+    <div class="sidebar-note">Investigation Workspace integrates case facts, epistemic events, evidence integrity, and competing hypotheses.</div>
+  </aside>
+
+  <main class="content">
+    <div class="workspace-top">
+      <a class="back-link" href="/dashboard">← Back to case dashboard</a>
+      <div class="eyebrow">CRMS 2.0 INVESTIGATION INTELLIGENCE</div>
+    </div>
+
+    <!-- Case Header Summary -->
+    <section id="case-header" class="panel" style="padding:20px;margin-bottom:20px">
+      <div class="case-header">
+        <div>
+          <div id="case-kicker" class="case-kicker">CASE</div>
+          <h1 id="case-title">Loading case records…</h1>
+          <p id="case-description" class="case-description"></p>
+        </div>
+        <div class="header-actions">
+          <a class="secondary-btn" href="/dashboard">Case dashboard</a>
+        </div>
+      </div>
+      <div class="workspace-tabs" id="workspace-tabs">
+        <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="timeline">Timeline</button>
+        <button class="tab-btn" data-tab="people">People</button>
+        <button class="tab-btn" data-tab="evidence">Evidence</button>
+        <button class="tab-btn" data-tab="analysis">Analysis</button>
+        <button class="tab-btn" data-tab="tasks">Tasks</button>
+        <button class="tab-btn" data-tab="graph">Graph</button>
+        <button class="tab-btn" data-tab="audit">Audit</button>
+        <button class="tab-btn" data-tab="package">Package</button>
+      </div>
+    </section>
+
+    <!-- Error State Container (Strictly No Fake Fallbacks) -->
+    <div id="error-panel" class="panel" style="display:none;padding:24px;border-left:4px solid #d75c5c;background:#fff8f8;margin-bottom:20px">
+      <h3 style="margin-top:0;color:#d75c5c">Investigation Error</h3>
+      <p id="error-message" style="color:#536b7c"></p>
+      <button class="secondary-btn" onclick="location.reload()">Retry request</button>
+    </div>
+
+    <!-- TAB 1: OVERVIEW -->
+    <div id="tab-overview" class="tab-content active">
+      <!-- Investigation Coverage / Readiness Indicator -->
+      <section class="readiness-container">
+        <div class="readiness-header">
+          <div>
+            <h2 style="margin:0;font-size:18px">Investigation Coverage / Readiness Indicator</h2>
+            <div class="disclaimer-banner" style="margin:8px 0 0;padding:8px 12px">
+              This indicator describes recorded workflow coverage in CRMS. It does not represent probability of case resolution, truth, guilt, innocence, or investigative success.
+            </div>
+          </div>
+          <div style="text-align:right">
+            <span id="readiness-overall-score" class="readiness-score-big">—%</span>
+            <small style="display:block;color:#6c7d8a;font-size:11px">WORKFLOW COVERAGE</small>
+          </div>
+        </div>
+        <div id="readiness-grid" class="readiness-grid"></div>
+      </section>
+
+      <!-- Explainable Case Priority -->
+      <section class="panel priority-dashboard-section" style="margin-top:0">
+        <div class="panel-header" style="padding:0 0 16px">
+          <div>
+            <h2>Explainable Case Priority</h2>
+            <p>Operational indicators explain the current priority score. This is a workflow aid, not a prediction of criminal behavior.</p>
+          </div>
+          <div class="priority-score-box"><span id="priority-score">—</span><small>/ 100</small></div>
+        </div>
+        <div class="priority-layout">
+          <div><div id="priority-contributors" class="priority-contributors"></div></div>
+          <div class="priority-metrics" id="priority-metrics"></div>
+        </div>
+      </section>
+
+      <!-- Next Recommended Actions -->
+      <section class="panel" style="padding:20px;margin-top:20px">
+        <h3 style="margin-top:0;font-size:16px">Recommended Investigative Review Actions</h3>
+        <div id="next-actions-list" style="display:grid;gap:10px"></div>
+      </section>
+    </div>
+
+    <!-- TAB 2: TIMELINE -->
+    <div id="tab-timeline" class="tab-content">
+      <section class="panel timeline">
+        <div class="panel-header" style="padding:0 0 18px">
+          <div>
+            <h2>Epistemological Timeline & Gap Detection</h2>
+            <p>Events are ordered chronologically, distinguishing recorded system events (FACT) from human observations (REPORTED). Gaps indicate unrecorded intervals.</p>
+          </div>
+        </div>
+        <div id="timeline-container"></div>
+      </section>
+    </div>
+
+    <!-- TAB 3: PEOPLE -->
+    <div id="tab-people" class="tab-content">
+      <section class="panel" style="padding:20px">
+        <div class="panel-header" style="padding:0 0 16px">
+          <div>
+            <h2>People Intelligence</h2>
+            <p>People connected to this case and their investigation roles. Roles reflect case classifications and do not establish automated guilt.</p>
+          </div>
+        <div class="disclaimer-banner" style="margin-bottom:16px">
+          <strong>Epistemic Note on People Intelligence:</strong> Person classifications, roles, recorded risk indicators, and alibi statuses reflect administrative case entries and operational review states. They do NOT represent judicial determinations, proof of involvement, or automated assessments of credibility.
+        </div>
+        <div id="people-container" class="people-grid"></div>
+      </section>
+    </div>
+
+    <!-- TAB 4: EVIDENCE -->
+    <div id="tab-evidence" class="tab-content">
+      <section class="panel" style="padding:20px">
+        <div class="panel-header" style="padding:0 0 16px">
+          <div>
+            <h2>Physical & Digital Evidence Registry</h2>
+            <p>Cryptographic integrity verification (SHA-256) for digital files, and unbroken chain of custody records for physical/digital items.</p>
+          </div>
+        </div>
+        <div id="evidence-container" class="evidence-grid"></div>
+      </section>
+    </div>
+
+    <!-- TAB 5: ANALYSIS (ACH, GAPS, SIGNALS) -->
+    <div id="tab-analysis" class="tab-content">
+      <!-- ACH Hypotheses Matrix -->
+      <section class="panel" style="padding:20px;margin-bottom:20px">
+        <div class="panel-header" style="padding:0 0 16px">
+          <div>
+            <h2>Analysis of Competing Hypotheses (ACH) Matrix</h2>
+            <p>Evaluate diagnostic evidence across mutually exclusive hypotheses to mitigate confirmation bias. Contradiction counts are descriptive investigator aids.</p>
+          </div>
+          <button class="primary-btn" id="add-hypothesis-btn" type="button">+ Add Hypothesis</button>
+        </div>
+        <div class="disclaimer-banner">
+          <strong>Analytic Methodology Notice:</strong> ACH is an analytic technique to evaluate evidence diagnostic value and mitigate cognitive confirmation bias. It does not determine legal guilt or substitute for human judicial judgment.
+        </div>
+        <div id="ach-matrix-container" class="matrix-wrap"></div>
+      </section>
+
+      <!-- Investigation Gaps -->
+      <section class="panel" style="padding:20px;margin-bottom:20px">
+        <div class="panel-header" style="padding:0 0 16px">
+          <div>
+            <h2>Recorded Investigation Gaps</h2>
+            <p>Timeline gaps and uncorroborated leads identified from current case records.</p>
+          </div>
+        </div>
+        <div id="gaps-list" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px"></div>
+      </section>
+
+      <!-- Cross-Case Intelligence Signals -->
+      <section class="panel" style="padding:20px">
+        <div class="panel-header" style="padding:0 0 16px">
+          <div>
+            <h2>Cross-Case Intelligence Signals</h2>
+            <p>Surfaces explainable overlap in people, locations, vehicles, and crime classifications across active cases.</p>
+          </div>
+          <button class="secondary-btn" id="refresh-intel-btn" type="button">Refresh Signals</button>
+        </div>
+        <div id="signals-container" style="display:grid;gap:10px"></div>
+      </section>
+    </div>
+
+    <!-- TAB 6: TASKS -->
+    <div id="tab-tasks" class="tab-content">
+      <section class="panel" style="padding:20px">
+        <div class="panel-header" style="padding:0 0 16px">
+          <div>
+            <h2>Investigation Tasks</h2>
+            <p>Assigned actions and follow-up reviews required for this case.</p>
+          </div>
+          <button class="primary-btn" id="add-task-btn" type="button">+ Add Task</button>
+        </div>
+        <div id="task-list" class="task-list"></div>
+      </section>
+    </div>
+
+    <!-- TAB 7: GRAPH -->
+    <div id="tab-graph" class="tab-content">
+      <section class="panel" style="padding:20px">
+        <div class="panel-header" style="padding:0 0 16px">
+          <div>
+            <h2>Case Relationship Graph</h2>
+            <p>Visual representation of relationships between case, people, evidence, locations, vehicles, and events.</p>
+          </div>
+        </div>
+        <div class="graph-wrap">
+          <svg id="graph-svg" class="graph-canvas" viewBox="0 0 1000 480"></svg>
+          <div id="graph-tooltip" class="graph-tooltip"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 8: AUDIT -->
+    <div id="tab-audit" class="tab-content">
+      <section class="panel" style="padding:20px">
+        <div class="panel-header" style="padding:0 0 16px">
+          <div>
+            <h2>Investigation Audit & Accountability Trail</h2>
+            <p>Chronological log of case modifications, hypothesis updates, evidence verification, and custody transfers.</p>
+          </div>
+          <button class="secondary-btn" id="refresh-audit-btn" type="button">Refresh Audit</button>
+        </div>
+        <div id="audit-list" class="audit-list"></div>
+      </section>
+    </div>
+
+    <!-- TAB 9: PACKAGE -->
+    <div id="tab-package" class="tab-content">
+      <section class="panel package-panel">
+        <div class="panel-header" style="padding:0 0 16px">
+          <div>
+            <h2>Investigation Case Package / Court Preparation Package</h2>
+            <p>Generates a complete, structured case dossier with deterministic Canonical Record Set SHA-256 and Exported Package File SHA-256.</p>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="primary-btn" id="generate-package-btn" type="button">Generate Package</button>
+            <button class="secondary-btn" id="print-package-btn" type="button">Print / Export PDF</button>
+          </div>
+        </div>
+        <div id="package-validation" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+        <div id="package-view-container">
+          <div style="padding:28px;text-align:center;color:#6c7d8a">No package generated for this case yet. Click "Generate Package" to compile records.</div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <script>
+    // Universal Case ID from URL
+    const params = new URLSearchParams(location.search);
+    const caseId = params.get('caseId');
+
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const pretty = v => String(v ?? '').replace(/_/g, ' ');
+
+    async function api(url, options = {}) {
+      try {
+        const res = await fetch(url, { credentials: 'same-origin', ...options });
+        if (res.status === 401 || res.status === 403) {
+          location = '/login';
+          throw new Error('Authentication required.');
+        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server returned error ' + res.status);
+        return data;
+      } catch (err) {
+        throw err;
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('error-message').textContent = msg;
+      document.getElementById('error-panel').style.display = 'block';
+    }
+
+    // Tab Navigation Setup
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const target = document.getElementById('tab-' + btn.dataset.tab);
+        if (target) target.classList.add('active');
+      });
+    });
+
+    // 1. Initial Load
+    async function loadWorkspace() {
+      if (!caseId || caseId.trim() === '') {
+        showError('No case identifier specified. Please open this workspace with ?caseId=<id>');
+        return;
+      }
+
+      try {
+        const cases = await api('/api/cases');
+        const currentCase = cases.find(c => c.caseId === caseId);
+        if (!currentCase) {
+          showError('Case ' + caseId + ' was not found in the records.');
+          return;
+        }
+
+        document.getElementById('case-kicker').textContent = 'CASE ' + currentCase.caseId;
+        document.getElementById('case-title').textContent = currentCase.title;
+        document.getElementById('case-description').textContent = currentCase.description || 'No description recorded.';
+
+        // Load all sections in parallel using strictly the same caseId
+        await Promise.all([
+          loadIntelligenceAndReadiness(),
+          loadPriority(),
+          loadTimeline(),
+          loadPeople(),
+          loadEvidence(),
+          loadACH(),
+          loadTasks(),
+          loadGraph(),
+          loadAudit(),
+          loadPackage()
+        ]);
+
+      } catch (err) {
+        showError(err.message || 'Unable to load investigation workspace.');
+      }
+    }
+
+    // 2. Intelligence & Readiness Indicator
+    async function loadIntelligenceAndReadiness() {
+      try {
+        const intel = await api('/api/case-intelligence?caseId=' + encodeURIComponent(caseId));
+        if (intel.readiness) {
+          renderReadiness(intel.readiness);
+        }
+        renderSignals(intel.signals || []);
+      } catch (err) {
+        document.getElementById('signals-container').innerHTML = '<div style="color:#d75c5c;padding:12px">Unable to load cross-case signals.</div>';
+      }
+    }
+
+    function renderReadiness(rd) {
+      document.getElementById('readiness-overall-score').textContent = rd.overallScore + '%';
+      const b = rd.breakdown;
+      const grid = document.getElementById('readiness-grid');
+      const items = [
+        ['Case Setup (15%)', b.caseSetup.score],
+        ['People & Roles (15%)', b.peopleAndRoles.score],
+        ['Timeline Coverage (20%)', b.timelineCoverage.score],
+        ['Evidence & Custody (20%)', b.evidenceAndCustody.score],
+        ['Hypothesis Analysis (20%)', b.hypothesisAnalysis.score],
+        ['Task Completion (10%)', b.taskCompletion.score]
+      ];
+      grid.innerHTML = items.map(([label, score]) => `
+        <div class="readiness-item">
+          <div class="readiness-item-title"><span>${esc(label)}</span><strong>${score}%</strong></div>
+          <div class="readiness-bar"><div class="readiness-bar-fill" style="width:${score}%"></div></div>
+        </div>
+      `).join('');
+
+      // Build Next Recommended Actions based on scores
+      const actions = [];
+      if (b.timelineCoverage.score < 80) actions.push('Review recorded timeline gaps for unexplained windows.');
+      if (b.evidenceAndCustody.score < 80) actions.push('Verify cryptographic SHA-256 hashes on digital evidence files.');
+      if (b.hypothesisAnalysis.score < 80) actions.push('Evaluate unassessed evidence relationships in the ACH Matrix.');
+      if (b.taskCompletion.score < 60) actions.push('Follow up on pending and blocked investigation tasks.');
+      if (!actions.length) actions.push('All core investigative indicators currently meet baseline coverage targets.');
+
+      document.getElementById('next-actions-list').innerHTML = actions.map(act => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8fafb;border:1px solid #e7ecef;border-radius:6px;font-size:13px">
+          <span style="color:#1b7db7;font-weight:800">→</span><span>${esc(act)}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderSignals(signals) {
+      const container = document.getElementById('signals-container');
+      if (!signals.length) {
+        container.innerHTML = '<div style="color:#6c7d8a;padding:16px;text-align:center">No cross-case signals detected from currently recorded data.</div>';
+        return;
+      }
+      container.innerHTML = signals.map(s => `
+        <div style="border:1px solid #d8e0e6;border-radius:8px;padding:14px;background:#fff">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <strong>${esc(s.title)}</strong>
+            <span class="badge" style="background:#e8f0f5;color:#31576b">${esc(pretty(s.type))}</span>
+          </div>
+          <p style="margin:6px 0;font-size:12px;color:#536b7c">${esc(s.description)}</p>
+          <div style="font-size:11px;color:#7b6a4b;background:#fffaf2;border:1px solid #f2e4c8;border-radius:4px;padding:6px 9px">
+            <strong>Review note:</strong> ${esc(s.reviewNote)}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 3. Priority
+    async function loadPriority() {
+      try {
+        const d = await api('/api/case-priority?caseId=' + encodeURIComponent(caseId));
+        document.getElementById('priority-score').textContent = d.score;
+        const pc = document.getElementById('priority-contributors');
+        pc.innerHTML = d.contributors.length ? d.contributors.map(x => `
+          <div class="priority-contributor">
+            <div><strong>${esc(x.label)}</strong><span>${esc(x.detail)}</span></div>
+            <b>+${x.points}</b>
+          </div>
+        `).join('') : '<div style="color:#6c7d8a">No priority contributors.</div>';
+        const m = d.metrics;
+        document.getElementById('priority-metrics').innerHTML = `
+          <div class="priority-metric"><span>Investigation Progress</span><strong>${d.taskProgress}%</strong>
+            <div class="progress" style="height:6px;background:#e9eef2;border-radius:4px;overflow:hidden;margin-top:6px"><span style="display:block;height:100%;width:${d.taskProgress}%;background:#1b7db7"></span></div>
+          </div>
+          <div class="priority-metric-grid" style="margin-top:10px">
+            <div><strong>${m.openTasks}</strong><span>Open Tasks</span></div>
+            <div><strong>${m.evidence}</strong><span>Evidence</span></div>
+            <div><strong>${m.events}</strong><span>Events</span></div>
+          </div>
+        `;
+      } catch (err) {
+        document.getElementById('priority-contributors').innerHTML = '<div style="color:#6c7d8a">Unable to load priority.</div>';
+      }
+    }
+
+    // 4. Timeline & Gaps
+    async function loadTimeline() {
+      try {
+        const data = await api('/api/case-events?caseId=' + encodeURIComponent(caseId));
+        const events = Array.isArray(data) ? data : (data.events || []);
+        const gaps = Array.isArray(data) ? [] : (data.gaps || []);
+        renderTimeline(events, gaps);
+        renderGapsList(gaps);
+      } catch (err) {
+        document.getElementById('timeline-container').innerHTML = '<div style="color:#d75c5c;padding:16px">Unable to load case timeline.</div>';
+      }
+    }
+
+    function renderTimeline(events, gaps) {
+      const container = document.getElementById('timeline-container');
+      if (!events.length) {
+        container.innerHTML = '<div style="color:#6c7d8a;padding:24px;text-align:center">No timeline events recorded for this case.</div>';
+        return;
+      }
+
+      let html = '';
+      for (let i = 0; i < events.length; i++) {
+        const ev = events[i];
+        const truthBadge = ev.truthLevel === 'FACT' ? 'badge-fact' : (ev.truthLevel === 'INFERRED' ? 'badge-inferred' : 'badge-reported');
+        const statusBadge = 'status-' + (ev.verificationStatus || '').toLowerCase();
+
+        html += `
+          <div class="timeline-item">
+            <div class="timeline-time">${esc(ev.eventTime.replace('T', ' '))}</div>
+            <div class="timeline-dot"></div>
+            <div class="event-card">
+              <div class="event-title">${esc(ev.title)}</div>
+              <div class="event-badges">
+                <span class="badge ${truthBadge}">Truth: ${esc(ev.truthLevel)}</span>
+                <span class="status-badge ${statusBadge}">${esc(pretty(ev.verificationStatus))}</span>
+                <span class="badge" style="background:#e8f0f5;color:#31576b">${esc(pretty(ev.eventType))}</span>
+                ${ev.location ? `<span style="font-size:11px;color:#6c7d8a">📍 ${esc(ev.location)}</span>` : ''}
+              </div>
+              ${ev.description ? `<p style="margin:6px 0;font-size:13px;color:#536b7c">${esc(ev.description)}</p>` : ''}
+              ${ev.source ? `<div style="font-size:11px;color:#7b8b96">Source: <strong>${esc(ev.source)}</strong></div>` : ''}
+            </div>
+          </div>
+        `;
+
+        // Check if there is a gap immediately following this event
+        if (i < events.length - 1) {
+          const nextEv = events[i + 1];
+          const matchedGap = gaps.find(g => g.fromTime === ev.eventTime && g.toTime === nextEv.eventTime);
+          if (matchedGap) {
+            html += `
+              <div class="timeline-gap-container">
+                <div></div>
+                <div style="border-left:2px dashed #cf9236;margin-left:13px"></div>
+                <div class="gap-card">
+                  <span class="gap-badge">RECORDED TIMELINE GAP</span>
+                  <div class="gap-time">${esc(formatShort(matchedGap.fromTime))} → ${esc(formatShort(matchedGap.toTime))} (${matchedGap.durationMinutes} minutes)</div>
+                  <p class="gap-disclaimer">${esc(matchedGap.disclaimer)}</p>
+                  <button class="gap-action-btn" onclick="openTaskForm('${esc(matchedGap.suggestedTaskTitle)}', '${esc(matchedGap.suggestedTaskDescription)}', '${esc(matchedGap.suggestedTaskPriority)}')">+ Create Gap Reconciliation Task</button>
+                </div>
+              </div>
+            `;
+          }
+        }
+      }
+      container.innerHTML = html;
+    }
+
+    function renderGapsList(gaps) {
+      const container = document.getElementById('gaps-list');
+      if (!gaps.length) {
+        container.innerHTML = '<div style="color:#6c7d8a;grid-column:1/-1;padding:16px;text-align:center">No timeline gaps exceeding review thresholds.</div>';
+        return;
+      }
+      container.innerHTML = gaps.map(g => `
+        <div class="gap-card">
+          <span class="gap-badge">${esc(g.windowType)}</span>
+          <div class="gap-time">${esc(g.fromTime)} → ${esc(g.toTime)} (${g.durationMinutes} min)</div>
+          <p class="gap-disclaimer">${esc(g.disclaimer)}</p>
+          <button class="gap-action-btn" onclick="openTaskForm('${esc(g.suggestedTaskTitle)}', '${esc(g.suggestedTaskDescription)}', '${esc(g.suggestedTaskPriority)}')">+ Create Task</button>
+        </div>
+      `).join('');
+    }
+
+    function formatShort(iso) {
+      try {
+        const parts = iso.split('T');
+        return parts[1] ? parts[1].substring(0, 5) : iso;
+      } catch (e) { return iso; }
+    }
+
+    // 5. People
+    async function loadPeople() {
+      try {
+        const people = await api('/api/case-people?caseId=' + encodeURIComponent(caseId));
+        const el = document.getElementById('people-container');
+        if (!people.length) {
+          el.innerHTML = '<div style="color:#6c7d8a;grid-column:1/-1;padding:24px;text-align:center">No persons currently linked to this case record.</div>';
+          return;
+        }
+        el.innerHTML = people.map(p => `
+          <article class="person-card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <strong style="font-size:16px">${esc(p.name)}</strong>
+                <div style="font-size:11px;color:#7b8b96;margin-top:2px">ID: ${esc(p.id)}</div>
+              </div>
+              <span class="role-badge">${esc(pretty(p.role))}</span>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:#536b7c;display:grid;gap:4px">
+              ${p.phone ? `<div><strong>Phone:</strong> ${esc(p.phone)}</div>` : ''}
+              ${p.notes ? `<div><strong>Case Note:</strong> ${esc(p.notes)}</div>` : ''}
+              ${p.physicalDescription ? `<div><strong>Physical:</strong> ${esc(p.physicalDescription)}</div>` : ''}
+              ${p.linkedCases ? `<div><strong>Linked Cases:</strong> ${p.linkedCases}</div>` : ''}
+            </div>
+          </article>
+        `).join('');
+      } catch (err) {
+        document.getElementById('people-container').innerHTML = '<div style="color:#d75c5c;padding:16px">Unable to load linked people.</div>';
+      }
+    }
+
+    // 6. Evidence & Cryptographic Verification
+    async function loadEvidence() {
+      try {
+        const items = await api('/api/evidence');
+        const caseEvidence = items.filter(e => e.caseId === caseId);
+        const container = document.getElementById('evidence-container');
+        if (!caseEvidence.length) {
+          container.innerHTML = '<div style="color:#6c7d8a;padding:24px;text-align:center">No evidence recorded for this case.</div>';
+          return;
+        }
+
+        container.innerHTML = caseEvidence.map(ev => {
+          const hasFile = ev.fileName && ev.fileName !== 'null';
+          const isDemo = ev.fileName && ev.fileName.includes('demo');
+          const hashStatus = ev.hashStatus || (hasFile ? 'PENDING_VERIFICATION' : 'NO_FILE_ATTACHED');
+          let statusChip = '<span class="badge" style="background:#e8f0f5;color:#31576b">NO DIGITAL FILE</span>';
+          if (hashStatus === 'VERIFIED_MATCH') statusChip = '<span class="badge badge-fact">✓ SHA-256 VERIFIED</span>';
+          else if (hashStatus === 'INTEGRITY_MISMATCH') statusChip = '<span class="badge" style="background:#fae5e6;color:#c73638">⚠ INTEGRITY MISMATCH</span>';
+
+          return `
+            <div class="evidence-card">
+              <div class="evidence-head">
+                <div>
+                  <strong style="font-size:16px">${esc(ev.evidenceId)}</strong> — ${esc(ev.description)}
+                  ${isDemo ? '<span class="demo-tag">DEMO / TEST DATA</span>' : ''}
+                </div>
+                ${statusChip}
+              </div>
+              <div class="evidence-meta">
+                <div><span style="color:#7b8b96">Custodian:</span> <strong>${esc(ev.custodian)}</strong></div>
+                <div><span style="color:#7b8b96">Attachment:</span> <strong>${hasFile ? esc(ev.fileName) : 'None (Physical Evidence)'}</strong></div>
+                <div><span style="color:#7b8b96">File Size:</span> <strong>${ev.fileSizeBytes ? ev.fileSizeBytes + ' bytes' : '—'}</strong></div>
+                <div><span style="color:#7b8b96">Custody Logs:</span> <strong>${ev.logs ? ev.logs.length : 0} recorded</strong></div>
+              </div>
+              ${ev.fileHash ? `
+                <div style="margin:8px 0;font-size:11px">
+                  <span style="color:#7b8b96">Recorded SHA-256 Hash:</span>
+                  <div class="hash-badge">${esc(ev.fileHash)}</div>
+                  ${ev.hashVerifiedAt ? `<small style="color:#2b9b6d;display:block;margin-top:3px">Verified at: ${esc(ev.hashVerifiedAt)}</small>` : ''}
+                </div>
+              ` : `
+                <div style="font-size:11px;color:#7b8b96;margin:8px 0">
+                  <em>No digital file attached. Custody history is tracked physically.</em>
+                </div>
+              `}
+              <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
+                ${hasFile ? `
+                  <button class="primary-btn" style="padding:6px 12px;font-size:11px" onclick="verifyHash('${esc(ev.evidenceId)}')">Verify Hash Now</button>
+                ` : `
+                  <button class="secondary-btn" style="padding:6px 12px;font-size:11px" onclick="attachDemoFixture('${esc(ev.evidenceId)}')">Attach Demo Fixture</button>
+                `}
+                <span id="hash-feedback-${esc(ev.evidenceId)}" style="font-size:11px;font-weight:700"></span>
+              </div>
+              ${ev.logs && ev.logs.length ? `
+                <details style="margin-top:12px;border-top:1px solid #edf1f4;padding-top:8px">
+                  <summary style="font-size:11px;color:#1b7db7;cursor:pointer;font-weight:700">View Chain of Custody History (${ev.logs.length})</summary>
+                  <div style="margin-top:8px;display:grid;gap:6px">
+                    ${ev.logs.map(l => `
+                      <div style="font-size:11px;background:#fbfcfd;border:1px solid #eef2f5;padding:6px 9px;border-radius:4px">
+                        <strong>${esc(l.time)}</strong>: ${esc(l.from)} → ${esc(l.to)} [${esc(l.remarks || 'No remarks')}]
+                      </div>
+                    `).join('')}
+                  </div>
+                </details>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        document.getElementById('evidence-container').innerHTML = '<div style="color:#d75c5c;padding:16px">Unable to load evidence.</div>';
+      }
+    }
+
+    async function verifyHash(evidenceId) {
+      const fb = document.getElementById('hash-feedback-' + evidenceId);
+      fb.textContent = 'Verifying SHA-256 hash...';
+      fb.style.color = '#536b7c';
+      try {
+        const res = await api('/api/evidence', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ action: 'reverify', evidenceId })
+        });
+        if (res.status === 'VERIFIED_MATCH') {
+          fb.textContent = '✓ VERIFIED MATCH: SHA-256 confirmed!';
+          fb.style.color = '#2b9b6d';
+        } else if (res.status === 'INTEGRITY_MISMATCH') {
+          fb.textContent = '⚠ INTEGRITY MISMATCH DETECTED!';
+          fb.style.color = '#d75c5c';
+        } else {
+          fb.textContent = res.message || res.status;
+        }
+        setTimeout(() => loadEvidence(), 1500);
+      } catch (err) {
+        fb.textContent = 'Verification error: ' + err.message;
+        fb.style.color = '#d75c5c';
+      }
+    }
+
+    async function attachDemoFixture(evidenceId) {
+      try {
+        await api('/api/evidence', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ action: 'attach_fixture', evidenceId, caseId })
+        });
+        loadEvidence();
+      } catch (err) {
+        alert('Could not attach fixture: ' + err.message);
+      }
+    }
+
+    // 7. ACH Analysis of Competing Hypotheses
+    async function loadACH() {
+      try {
+        const d = await api('/api/investigation-hypotheses?caseId=' + encodeURIComponent(caseId));
+        renderACHMatrix(d);
+      } catch (err) {
+        document.getElementById('ach-matrix-container').innerHTML = '<div style="color:#d75c5c;padding:16px">Unable to load ACH hypotheses.</div>';
+      }
+    }
+
+    function renderACHMatrix(data) {
+      const hypotheses = data.hypotheses || [];
+      const evidence = data.evidence || [];
+      const rels = data.relationships || [];
+      const container = document.getElementById('ach-matrix-container');
+
+      if (!hypotheses.length) {
+        container.innerHTML = '<div style="color:#6c7d8a;padding:24px;text-align:center">No hypotheses recorded for this case. Click "+ Add Hypothesis" to start ACH analysis.</div>';
+        return;
+      }
+
+      let html = '<table class="ach-table"><thead><tr><th style="width:200px">Evidence Item</th>';
+      hypotheses.forEach(h => {
+        html += `
+          <th>
+            <div class="hyp-header">
+              <span class="hyp-code">${esc(h.hypothesisCode)}</span>
+              <span class="hyp-title">${esc(h.title)}</span>
+              <p class="hyp-desc">${esc(h.description || '')}</p>
+              <select class="hyp-status-select" onchange="updateHypothesisStatus(${h.id}, this.value)">
+                <option value="ACTIVE" ${h.status === 'ACTIVE' ? 'selected' : ''}>Active</option>
+                <option value="UNDER_REVIEW" ${h.status === 'UNDER_REVIEW' ? 'selected' : ''}>Under Review</option>
+                <option value="RETAINED" ${h.status === 'RETAINED' ? 'selected' : ''}>Retained</option>
+                <option value="REJECTED_BY_INVESTIGATOR" ${h.status === 'REJECTED_BY_INVESTIGATOR' ? 'selected' : ''}>Rejected by Investigator</option>
+                <option value="INACTIVE" ${h.status === 'INACTIVE' ? 'selected' : ''}>Inactive</option>
+              </select>
+              <div class="hyp-counts">
+                <span>Contradictions recorded: <strong>${h.contradictionCount}</strong></span>
+                <span>Supporting recorded: <strong>${h.supportCount}</strong></span>
+                <span>Context recorded: <strong>${h.contextCount}</strong></span>
+              </div>
+            </div>
+          </th>
+        `;
+      });
+      html += '</tr></thead><tbody>';
+
+      if (!evidence.length) {
+        html += `<tr><td colspan="${hypotheses.length + 1}" style="text-align:center;color:#6c7d8a;padding:18px">No evidence items recorded to map against hypotheses.</td></tr>`;
+      } else {
+        evidence.forEach(ev => {
+          html += `<tr><td><strong>${esc(ev.id)}</strong><br><span style="font-size:11px;color:#6c7d8a">${esc(ev.description)}</span></td>`;
+          hypotheses.forEach(h => {
+            const relObj = rels.find(r => r.hypothesisId === h.id && r.evidenceId === ev.id);
+            const relType = relObj ? relObj.relationshipType : 'UNASSESSED';
+            const btnClass = 'rel-' + relType.toLowerCase();
+            const symbol = relType === 'SUPPORTS' ? '+ ' : (relType === 'CONTRADICTS' ? '- ' : (relType === 'CONTEXT' ? '~ ' : '? '));
+
+            html += `
+              <td>
+                <button class="rel-cell-btn ${btnClass}" onclick="openRelModal(${h.id}, '${esc(h.hypothesisCode)}', '${esc(ev.id)}', '${relType}', '${esc(relObj ? relObj.notes : '')}')">
+                  ${symbol}${relType}
+                </button>
+              </td>
+            `;
+          });
+          html += '</tr>';
+        });
+      }
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    async function updateHypothesisStatus(id, newStatus) {
+      try {
+        await api('/api/investigation-hypotheses?caseId=' + encodeURIComponent(caseId), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ id, status: newStatus })
+        });
+        loadACH();
+      } catch (err) {
+        alert('Could not update status: ' + err.message);
+      }
+    }
+
+    function openRelModal(hypothesisId, code, evidenceId, currentRel, currentNotes) {
+      const old = document.getElementById('rel-modal');
+      if (old) old.remove();
+      const m = document.createElement('div');
+      m.id = 'rel-modal';
+      m.style = 'position:fixed;inset:0;background:rgba(15,45,61,.4);display:flex;align-items:center;justify-content:center;z-index:99;padding:20px';
+      m.innerHTML = `
+        <div style="background:#fff;border-radius:10px;padding:24px;width:min(480px,100%);box-shadow:0 20px 40px rgba(0,0,0,.2)">
+          <h3 style="margin-top:0">Set ACH Relationship</h3>
+          <p style="font-size:12px;color:#6c7d8a">Hypothesis: <strong>${esc(code)}</strong> | Evidence: <strong>${esc(evidenceId)}</strong></p>
+          <label style="display:block;margin:12px 0 6px;font-weight:700;font-size:12px">Relationship Type</label>
+          <select id="rel-select" style="width:100%;padding:8px;border:1px solid #cfd9df;border-radius:6px">
+            <option value="UNASSESSED" ${currentRel === 'UNASSESSED' ? 'selected' : ''}>? UNASSESSED</option>
+            <option value="SUPPORTS" ${currentRel === 'SUPPORTS' ? 'selected' : ''}>+ SUPPORTS</option>
+            <option value="CONTRADICTS" ${currentRel === 'CONTRADICTS' ? 'selected' : ''}>- CONTRADICTS</option>
+            <option value="CONTEXT" ${currentRel === 'CONTEXT' ? 'selected' : ''}>~ CONTEXT</option>
+          </select>
+          <label style="display:block;margin:12px 0 6px;font-weight:700;font-size:12px">Rationale / Notes</label>
+          <textarea id="rel-notes" rows="3" style="width:100%;padding:8px;border:1px solid #cfd9df;border-radius:6px">${esc(currentNotes)}</textarea>
+          <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+            <button class="secondary-btn" onclick="document.getElementById('rel-modal').remove()">Cancel</button>
+            <button class="primary-btn" id="save-rel-btn">Save Relationship</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(m);
+      document.getElementById('save-rel-btn').onclick = async () => {
+        const relType = document.getElementById('rel-select').value;
+        const notes = document.getElementById('rel-notes').value;
+        try {
+          await api('/api/investigation-hypotheses?caseId=' + encodeURIComponent(caseId), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ action: 'relationship', hypothesisId, evidenceId, relationshipType: relType, notes })
+          });
+          m.remove();
+          loadACH();
+          loadIntelligenceAndReadiness();
+        } catch (err) {
+          alert('Could not save relationship: ' + err.message);
+        }
+      };
+    }
+
+    document.getElementById('add-hypothesis-btn').onclick = () => {
+      const old = document.getElementById('hyp-modal');
+      if (old) old.remove();
+      const m = document.createElement('div');
+      m.id = 'hyp-modal';
+      m.style = 'position:fixed;inset:0;background:rgba(15,45,61,.4);display:flex;align-items:center;justify-content:center;z-index:99;padding:20px';
+      m.innerHTML = `
+        <div style="background:#fff;border-radius:10px;padding:24px;width:min(480px,100%);box-shadow:0 20px 40px rgba(0,0,0,.2)">
+          <h3 style="margin-top:0">Add Competing Hypothesis</h3>
+          <label style="display:block;margin:12px 0 6px;font-weight:700;font-size:12px">Hypothesis Code (e.g. H4)</label>
+          <input id="hyp-code-input" placeholder="H4" required style="width:100%;padding:8px;border:1px solid #cfd9df;border-radius:6px">
+          <label style="display:block;margin:12px 0 6px;font-weight:700;font-size:12px">Title</label>
+          <input id="hyp-title-input" placeholder="Describe the working hypothesis" required style="width:100%;padding:8px;border:1px solid #cfd9df;border-radius:6px">
+          <label style="display:block;margin:12px 0 6px;font-weight:700;font-size:12px">Description</label>
+          <textarea id="hyp-desc-input" rows="3" placeholder="Context and scope of hypothesis" style="width:100%;padding:8px;border:1px solid #cfd9df;border-radius:6px"></textarea>
+          <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+            <button class="secondary-btn" onclick="document.getElementById('hyp-modal').remove()">Cancel</button>
+            <button class="primary-btn" id="save-hyp-btn">Create Hypothesis</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(m);
+      document.getElementById('save-hyp-btn').onclick = async () => {
+        const code = document.getElementById('hyp-code-input').value;
+        const title = document.getElementById('hyp-title-input').value;
+        const desc = document.getElementById('hyp-desc-input').value;
+        if (!code || !title) { alert('Code and title are required.'); return; }
+        try {
+          await api('/api/investigation-hypotheses?caseId=' + encodeURIComponent(caseId), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ code, title, description: desc })
+          });
+          m.remove();
+          loadACH();
+          loadIntelligenceAndReadiness();
+        } catch (err) {
+          alert('Could not create hypothesis: ' + err.message);
+        }
+      };
+    };
+
+    // 8. Tasks
+    async function loadTasks() {
+      try {
+        const tasks = await api('/api/investigation-tasks?caseId=' + encodeURIComponent(caseId));
+        const el = document.getElementById('task-list');
+        if (!tasks.length) {
+          el.innerHTML = '<div style="color:#6c7d8a;padding:24px;text-align:center">No investigation tasks created yet.</div>';
+          return;
+        }
+        el.innerHTML = tasks.map(t => `
+          <article class="task-card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <strong>${esc(t.title)}</strong>
+              <span class="badge" style="background:${t.priority==='CRITICAL'?'#f7dfe0':'#f5e6d4'};color:${t.priority==='CRITICAL'?'#d75c5c':'#cf8d2a'}">${esc(t.priority)}</span>
+            </div>
+            ${t.description ? `<p style="margin:6px 0;font-size:12px;color:#536b7c">${esc(t.description)}</p>` : ''}
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+              <span style="font-size:11px;color:#7b8b96">Assignee: ${esc(t.assignedOfficerName || 'Unassigned')} ${t.dueDate ? '• Due: ' + esc(t.dueDate) : ''}</span>
+              <select onchange="updateTaskStatus(${t.id}, this.value)" style="padding:4px 8px;font-size:11px;border:1px solid #cfd9df;border-radius:4px">
+                <option value="PENDING" ${t.status==='PENDING'?'selected':''}>Pending</option>
+                <option value="IN_PROGRESS" ${t.status==='IN_PROGRESS'?'selected':''}>In Progress</option>
+                <option value="BLOCKED" ${t.status==='BLOCKED'?'selected':''}>Blocked</option>
+                <option value="COMPLETED" ${t.status==='COMPLETED'?'selected':''}>Completed</option>
+                <option value="CANCELLED" ${t.status==='CANCELLED'?'selected':''}>Cancelled</option>
+              </select>
+            </div>
+          </article>
+        `).join('');
+      } catch (err) {
+        document.getElementById('task-list').innerHTML = '<div style="color:#d75c5c;padding:16px">Unable to load tasks.</div>';
+      }
+    }
+
+    async function updateTaskStatus(id, status) {
+      try {
+        await api('/api/investigation-tasks?caseId=' + encodeURIComponent(caseId), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ id, status })
+        });
+        loadTasks();
+        loadIntelligenceAndReadiness();
+      } catch (err) {
+        alert('Could not update task: ' + err.message);
+      }
+    }
+
+    function openTaskForm(title = '', desc = '', priority = 'MEDIUM') {
+      const old = document.getElementById('task-modal');
+      if (old) old.remove();
+      const m = document.createElement('div');
+      m.id = 'task-modal';
+      m.style = 'position:fixed;inset:0;background:rgba(15,45,61,.4);display:flex;align-items:center;justify-content:center;z-index:99;padding:20px';
+      m.innerHTML = `
+        <div style="background:#fff;border-radius:10px;padding:24px;width:min(500px,100%);box-shadow:0 20px 40px rgba(0,0,0,.2)">
+          <h3 style="margin-top:0">Create Investigation Task</h3>
+          <label style="display:block;margin:12px 0 6px;font-weight:700;font-size:12px">Title</label>
+          <input id="task-title-input" value="${esc(title)}" required style="width:100%;padding:8px;border:1px solid #cfd9df;border-radius:6px">
+          <label style="display:block;margin:12px 0 6px;font-weight:700;font-size:12px">Description</label>
+          <textarea id="task-desc-input" rows="3" style="width:100%;padding:8px;border:1px solid #cfd9df;border-radius:6px">${esc(desc)}</textarea>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+            <div>
+              <label style="display:block;font-weight:700;font-size:12px;margin-bottom:4px">Priority</label>
+              <select id="task-priority-input" style="width:100%;padding:8px;border:1px solid #cfd9df;border-radius:6px">
+                <option ${priority==='LOW'?'selected':''}>LOW</option>
+                <option ${priority==='MEDIUM'?'selected':''}>MEDIUM</option>
+                <option ${priority==='HIGH'?'selected':''}>HIGH</option>
+                <option ${priority==='CRITICAL'?'selected':''}>CRITICAL</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-weight:700;font-size:12px;margin-bottom:4px">Due Date</label>
+              <input type="date" id="task-due-input" style="width:100%;padding:7px;border:1px solid #cfd9df;border-radius:6px">
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px">
+            <button class="secondary-btn" onclick="document.getElementById('task-modal').remove()">Cancel</button>
+            <button class="primary-btn" id="save-task-btn">Create Task</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(m);
+      document.getElementById('save-task-btn').onclick = async () => {
+        const tTitle = document.getElementById('task-title-input').value;
+        const tDesc = document.getElementById('task-desc-input').value;
+        const tPri = document.getElementById('task-priority-input').value;
+        const tDue = document.getElementById('task-due-input').value;
+        if (!tTitle) { alert('Title is required.'); return; }
+        try {
+          await api('/api/investigation-tasks?caseId=' + encodeURIComponent(caseId), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ title: tTitle, description: tDesc, priority: tPri, dueDate: tDue })
+          });
+          m.remove();
+          loadTasks();
+          loadIntelligenceAndReadiness();
+        } catch (err) {
+          alert('Could not create task: ' + err.message);
+        }
+      };
+    }
+    document.getElementById('add-task-btn').onclick = () => openTaskForm();
+
+    // 9. Graph
+    const graphColors = { CASE: '#0f2d3d', PERSON: '#1b7db7', EVIDENCE: '#2b9b6d', LOCATION: '#cf8d2a', VEHICLE: '#8a63b8', EVENT: '#d75c5c' };
+    async function loadGraph() {
+      try {
+        const data = await api('/api/case-graph?caseId=' + encodeURIComponent(caseId));
+        renderGraph(data);
+      } catch (err) {
+        document.getElementById('graph-svg').innerHTML = '<text x="500" y="240" text-anchor="middle" fill="#d75c5c">Unable to load relationship graph.</text>';
+      }
+    }
+
+    function renderGraph(data) {
+      const svg = document.getElementById('graph-svg'), tip = document.getElementById('graph-tooltip');
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      if (!data.nodes || !data.nodes.length) {
+        svg.innerHTML = '<text x="500" y="240" text-anchor="middle" fill="#6c7d8a">No relationship data available for this case.</text>';
+        return;
+      }
+      const cx = 500, cy = 240;
+      const nodes = data.nodes.map(n => ({ ...n, x: cx, y: cy }));
+      const center = nodes.find(n => n.type === 'CASE' && n.id === ('CASE:' + data.caseId)) || nodes[0];
+      center.x = cx; center.y = cy;
+
+      const groups = ['PERSON', 'EVIDENCE', 'LOCATION', 'VEHICLE', 'EVENT'];
+      let ring = 0;
+      groups.forEach(type => {
+        const arr = nodes.filter(n => n.type === type);
+        if (!arr.length) return;
+        const radius = 145 + ring * 35;
+        arr.forEach((n, i) => {
+          const a = (Math.PI * 2 * i / arr.length) - (Math.PI / 2);
+          n.x = cx + Math.cos(a) * radius;
+          n.y = cy + Math.sin(a) * radius;
+        });
+        ring++;
+      });
+
+      const ns = {}; nodes.forEach(n => ns[n.id] = n);
+      const el = (tag, attrs) => {
+        const x = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        Object.entries(attrs || {}).forEach(([k, v]) => x.setAttribute(k, v));
+        return x;
+      };
+
+      (data.edges || []).forEach(e => {
+        const a = ns[e.source], b = ns[e.target];
+        if (!a || !b) return;
+        const line = el('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: '#cbd6dc', 'stroke-width': '1.5' });
+        svg.appendChild(line);
+      });
+
+      nodes.forEach(n => {
+        const g = el('g', { transform: `translate(${n.x},${n.y})`, cursor: 'pointer' });
+        const c = el('circle', { r: n.type === 'CASE' ? 28 : 20, fill: graphColors[n.type] || '#536b7c', stroke: '#fff', 'stroke-width': '3' });
+        g.appendChild(c);
+        const label = el('text', { x: 0, y: 4, 'text-anchor': 'middle', fill: '#fff', 'font-size': '10', 'font-weight': '700' });
+        let short = n.label || n.id.split(':')[1] || '';
+        if (short.length > 15) short = short.slice(0, 14) + '…';
+        label.textContent = short;
+        g.appendChild(label);
+
+        g.addEventListener('mouseenter', ev => {
+          tip.style.display = 'block';
+          tip.style.left = (ev.offsetX + 15) + 'px';
+          tip.style.top = (ev.offsetY + 15) + 'px';
+          tip.innerHTML = `<strong>${esc(n.label)}</strong><br><span>${esc(n.type)} • ${esc(n.id)}</span>`;
+        });
+        g.addEventListener('mouseleave', () => tip.style.display = 'none');
+        svg.appendChild(g);
+      });
+    }
+
+    // 10. Audit Trail
+    async function loadAudit() {
+      try {
+        const d = await api('/api/case-audit?caseId=' + encodeURIComponent(caseId));
+        const rows = d.events || [];
+        const el = document.getElementById('audit-list');
+        if (!rows.length) {
+          el.innerHTML = '<div style="color:#6c7d8a;padding:24px;text-align:center">No audit entries recorded for this case.</div>';
+          return;
+        }
+        el.innerHTML = rows.map(r => `
+          <div class="audit-item">
+            <div style="font-size:11px;color:#7b8b96">${esc(r.timestamp)}</div>
+            <div>
+              <div style="font-weight:800;font-size:13px">${esc(pretty(r.action))}</div>
+              <div style="font-size:11px;color:#6c7d8a;margin:3px 0">
+                <span>Entity: <strong>${esc(r.entityType)}</strong> (${esc(r.entityId)})</span> • <span>Actor: <strong>${esc(r.actor)}</strong></span>
+              </div>
+              <div style="font-size:11px;color:#536b7c;background:#f8fafb;padding:6px 8px;border-radius:4px;margin-top:4px">${esc(r.details || 'No details')}</div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        document.getElementById('audit-list').innerHTML = '<div style="color:#d75c5c;padding:16px">Unable to load audit trail.</div>';
+      }
+    }
+    document.getElementById('refresh-audit-btn').onclick = loadAudit;
+    document.getElementById('refresh-intel-btn').onclick = loadIntelligenceAndReadiness;
+
+    // 11. Package (Dual Hashed Court/Investigation Dossier)
+    async function loadPackage() {
+      try {
+        const d = await api('/api/case-reports?caseId=' + encodeURIComponent(caseId));
+        const val = d.validation;
+        const valEl = document.getElementById('package-validation');
+        valEl.innerHTML = [
+          ['People', val.people],
+          ['Timeline Events', val.events],
+          ['Evidence', val.evidence],
+          ['Hypotheses', val.hypotheses],
+          ['Open Tasks', val.openTasks]
+        ].map(([name, count]) => `
+          <span class="badge" style="background:${count ? '#edf8f2' : '#fff7e8'};color:${count ? '#187950' : '#cf8d2a'}">
+            ${count ? '✓' : '!'} ${name}: ${count}
+          </span>
+        `).join('');
+
+        const container = document.getElementById('package-view-container');
+        if (!d.report) {
+          container.innerHTML = '<div style="padding:28px;text-align:center;color:#6c7d8a">No package generated for this case yet. Click "Generate Package" to compile records.</div>';
+          return;
+        }
+
+        const r = d.report;
+        container.innerHTML = `
+          <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline">
+            <div>
+              <strong style="font-size:16px">${esc(r.title)}</strong>
+              <div style="font-size:11px;color:#7b8b96;margin-top:2px">Status: ${esc(r.status)} • Generated: ${esc(r.createdAt)}</div>
+            </div>
+            <select onchange="updateReportStatus(${r.id}, this.value)" style="padding:5px 9px;border:1px solid #cfd9df;border-radius:5px;font-size:11px">
+              <option value="DRAFT" ${r.status==='DRAFT'?'selected':''}>Draft</option>
+              <option value="UNDER_REVIEW" ${r.status==='UNDER_REVIEW'?'selected':''}>Under Review</option>
+              <option value="APPROVED" ${r.status==='APPROVED'?'selected':''}>Approved</option>
+              <option value="ARCHIVED" ${r.status==='ARCHIVED'?'selected':''}>Archived</option>
+            </select>
+          </div>
+          <div class="package-content">${esc(r.content)}</div>
+        `;
+      } catch (err) {
+        document.getElementById('package-view-container').innerHTML = '<div style="color:#d75c5c;padding:16px">Unable to load case package.</div>';
+      }
+    }
+
+    async function updateReportStatus(id, status) {
+      try {
+        await api('/api/case-reports?caseId=' + encodeURIComponent(caseId), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ id, status })
+        });
+        loadPackage();
+      } catch (err) {
+        alert('Could not update status: ' + err.message);
+      }
+    }
+
+    document.getElementById('generate-package-btn').onclick = async () => {
+      try {
+        await api('/api/case-reports?caseId=' + encodeURIComponent(caseId), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            reportType: 'INVESTIGATION_REPORT',
+            title: 'Investigation Case Package / Court Preparation Package - ' + caseId
+          })
+        });
+        loadPackage();
+      } catch (err) {
+        alert('Could not generate package: ' + err.message);
+      }
+    };
+
+    document.getElementById('print-package-btn').onclick = () => window.print();
+
+    // Kick off workspace
+    loadWorkspace();
+  </script>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+import java.sql.*;
+import java.time.LocalDate;
+import java.util.*;
+import model.*;
+
+public final class CaseDao {
+    public List<CaseRecord> findAll()throws SQLException{List<CaseRecord> out=new ArrayList<>();String sql="SELECT c.*,o.id oid,o.name oname,o.contact ocontact,o.badge_number obadge FROM cases c LEFT JOIN officers o ON o.id=c.assigned_officer_id ORDER BY c.priority DESC";try(Connection db=Database.connect();Statement s=db.createStatement();ResultSet r=s.executeQuery(sql)){while(r.next()){CaseRecord x=new CaseRecord(r.getString("id"),r.getString("title"),r.getString("description"),Severity.valueOf(r.getString("severity")));x.setStatus(CaseStatus.valueOf(r.getString("status")));x.setDateOpened(LocalDate.parse(r.getString("opening_date")));if(r.getString("oid")!=null)x.assignOfficer(new Officer(r.getString("oid"),r.getString("oname"),r.getString("ocontact"),r.getString("obadge")));out.add(x);}}return out;}
+    public void save(CaseRecord x,String officerId)throws SQLException{String sql="INSERT INTO cases(id,title,description,severity,status,opening_date,assigned_officer_id,priority) VALUES(?,?,?,?,?,?,?,?)";try(Connection c=Database.connect();PreparedStatement p=c.prepareStatement(sql)){p.setString(1,x.getCaseId());p.setString(2,x.getTitle());p.setString(3,x.getDescription());p.setString(4,x.getSeverity().name());p.setString(5,x.getStatus().name());p.setString(6,x.getDateOpened().toString());p.setString(7,officerId);p.setInt(8,x.calculatePriorityScore());p.executeUpdate();}}
+    public void update(CaseRecord x,String officerId)throws SQLException{try(Connection c=Database.connect();PreparedStatement p=c.prepareStatement("UPDATE cases SET title=?,description=?,severity=?,status=?,opening_date=?,assigned_officer_id=?,priority=? WHERE id=?")){p.setString(1,x.getTitle());p.setString(2,x.getDescription());p.setString(3,x.getSeverity().name());p.setString(4,x.getStatus().name());p.setString(5,x.getDateOpened().toString());p.setString(6,officerId);p.setInt(7,x.calculatePriorityScore());p.setString(8,x.getCaseId());if(p.executeUpdate()!=1)throw new SQLException("Case not found");}}
+}

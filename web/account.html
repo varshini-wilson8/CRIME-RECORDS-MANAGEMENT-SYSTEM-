@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRMS 2.0 | User Account &amp; Profile</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .account-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .profile-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 24px 26px;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 22px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #e0f2fe;
+      color: #0284c7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 700;
+      border: 2px solid #bae6fd;
+      flex-shrink: 0;
+    }
+
+    .profile-names h2 {
+      margin: 0 0 4px;
+      font-size: 20px;
+      color: #0f2d3d;
+    }
+
+    .profile-username {
+      color: var(--muted);
+      font-size: 13px;
+      font-family: ui-monospace, monospace;
+    }
+
+    .info-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .info-label {
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+
+    .info-value {
+      color: #1e293b;
+      font-weight: 700;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+
+    .role-badge-tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+
+    .role-badge-tag.admin {
+      background: #ede9fe;
+      color: #5b21b6;
+      border-color: #ddd6fe;
+    }
+
+    .role-badge-tag.commander {
+      background: #e0f2fe;
+      color: #0369a1;
+      border-color: #bae6fd;
+    }
+
+    .role-badge-tag.fieldagent {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fde68a;
+    }
+
+    .permissions-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 24px 26px;
+    }
+
+    .permissions-header {
+      margin-bottom: 16px;
+    }
+
+    .permissions-header h3 {
+      margin: 0 0 4px;
+      font-size: 17px;
+      color: #0f2d3d;
+    }
+
+    .permissions-header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .permissions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .perm-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 7px;
+      font-size: 12px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+
+    .perm-item.allowed {
+      border-color: #d1fae5;
+      background: #f0fdf4;
+    }
+
+    .perm-item.restricted {
+      border-color: #f1f5f9;
+      background: #f8fafc;
+      opacity: 0.65;
+    }
+
+    .perm-name {
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .perm-status {
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .perm-status.granted { color: #15803d; }
+    .perm-status.locked { color: #64748b; }
+
+    .epistemic-disclaimer {
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: 6px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    .session-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 22px 26px;
+      margin-bottom: 24px;
+    }
+
+    .danger-zone {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 22px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+    }
+
+    .danger-btn {
+      background: #dc2626;
+      color: #ffffff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .danger-btn:hover {
+      background: #b91c1c;
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 900px) {
+      .account-grid { grid-template-columns: 1fr; }
+      .permissions-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark">C</span>
+      <div>
+        <strong>CRMS 2.0</strong>
+        <small>Case Command</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/cases">Case records</a>
+      <a href="/evidence">Evidence custody</a>
+      <a href="/suspects">Suspects</a>
+      <a href="/officers">Officers</a>
+      <a href="/command-center">Command center</a>
+      <a href="/map">Crime map</a>
+      <a href="/account" class="active">My Account</a>
+    </nav>
+
+    <div class="sidebar-note">
+      CRMS 2.0 Role-Based Access Control protects case files, evidence chains, and intelligence records.
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="page-top">
+      <div class="eyebrow">USER PROFILE &amp; SYSTEM ACCESS</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button id="accountSignOutBtn" class="danger-btn">Sign Out</button>
+      </div>
+    </div>
+
+    <h1>User Account &amp; Access</h1>
+    <p class="subtitle">Review your active session identity, officer assignment, and authorized system permissions.</p>
+
+    <div class="account-grid">
+      <!-- Profile Information -->
+      <section class="profile-card">
+        <div class="profile-header">
+          <div class="profile-avatar" id="avatarText">👤</div>
+          <div class="profile-names">
+            <h2 id="profDisplayName">Loading...</h2>
+            <div class="profile-username" id="profUsername">—</div>
+          </div>
+        </div>
+
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">Assigned Role</span>
+            <span id="profRoleBadge" class="role-badge-tag">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Account Status</span>
+            <span class="status-pill"><span class="status-dot"></span> Active</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Officer Link</span>
+            <span id="profOfficerName" class="info-value">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Badge Number</span>
+            <span id="profBadgeNumber" class="info-value">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Contact</span>
+            <span id="profContact" class="info-value">—</span>
+          </div>
+        </div>
+
+        <div class="epistemic-disclaimer">
+          Identity and role credentials are provided by the CRMS 2.0 user authentication repository. Roles and permissions cannot be edited from this interface.
+        </div>
+      </section>
+
+      <!-- Active RBAC Permissions -->
+      <section class="permissions-card">
+        <div class="permissions-header">
+          <h3>Role Authorizations (RBAC)</h3>
+          <p>System modules and actions granted to your assigned security role.</p>
+        </div>
+
+        <div class="permissions-grid" id="permissionsGrid">
+          <div style="grid-column: 1/-1; color: var(--muted); font-size: 13px;">Loading permissions...</div>
+        </div>
+
+        <div class="epistemic-disclaimer" style="margin-top:20px;">
+          <strong>Server-Side Enforcement:</strong> All endpoints are protected by <code>RoleProtectedHandler</code>. Client-side navigation does not grant access to restricted modules.
+        </div>
+      </section>
+    </div>
+
+    <!-- Session & Logout Section -->
+    <section class="session-card">
+      <div class="danger-zone">
+        <div>
+          <strong style="color:#991b1b;font-size:14px;display:block;margin-bottom:3px;">Active Work Session</strong>
+          <span style="color:#7f1d1d;font-size:12px;">Sign out to invalidate your active authenticated session and clear security cookies.</span>
+        </div>
+        <button id="endSessionBtn" class="danger-btn">Sign Out</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('/api/me');
+        if (!res.ok) {
+          window.location.replace('/login');
+          return;
+        }
+        const me = await res.json();
+
+        // Populate profile info
+        document.getElementById('profDisplayName').textContent = me.displayName || me.username;
+        document.getElementById('profUsername').textContent = '@' + me.username;
+        document.getElementById('avatarText').textContent = (me.displayName || me.username || 'U').substring(0, 1).toUpperCase();
+
+        const roleBadge = document.getElementById('profRoleBadge');
+        roleBadge.textContent = me.roleTitle || me.role;
+        roleBadge.className = 'role-badge-tag ' + (me.role ? me.role.toLowerCase() : '');
+
+        document.getElementById('profOfficerName').textContent = me.officerId ? me.displayName + ' (' + me.officerId + ')' : 'None (System Account)';
+        document.getElementById('profBadgeNumber').textContent = me.badgeNumber || 'N/A';
+        document.getElementById('profContact').textContent = me.contact || 'N/A';
+
+        // Populate permissions
+        const grid = document.getElementById('permissionsGrid');
+        grid.innerHTML = '';
+
+        if (Array.isArray(me.permissions)) {
+          me.permissions.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'perm-item ' + (p.allowed ? 'allowed' : 'restricted');
+            item.innerHTML = `
+              <span class="perm-name">${escapeHtml(p.name)}</span>
+              <span class="perm-status ${p.allowed ? 'granted' : 'locked'}">
+                ${p.allowed ? '✓ Granted' : '🔒 Restricted'}
+              </span>
+            `;
+            grid.appendChild(item);
+          });
+        }
+
+        // Sign out triggers
+        const triggerSignOut = () => {
+          if (typeof window.showSignOutModal === 'function') {
+            window.showSignOutModal();
+          } else {
+            if (confirm('Are you sure you want to sign out?')) {
+              fetch('/api/logout', { method: 'POST' }).then(() => {
+                window.location.replace('/login?loggedOut=true');
+              });
+            }
+          }
+        };
+
+        document.getElementById('accountSignOutBtn')?.addEventListener('click', triggerSignOut);
+        document.getElementById('endSessionBtn')?.addEventListener('click', triggerSignOut);
+
+      } catch (err) {
+        console.error('Failed to load user profile:', err);
+      }
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+  </script>
+</body>
+</html>

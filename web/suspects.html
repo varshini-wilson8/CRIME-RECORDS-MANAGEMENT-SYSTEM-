@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CCECS | Suspect Registry</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .filter-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .filter-bar select { width: auto; min-width: 170px; }
+    .filter-bar input[type="search"] { flex: 1; min-width: 240px; }
+    .badge-count { display: inline-block; background: #e0eef7; color: #1b7db7; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+    
+    .suspect-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+    .suspect-card {
+      background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .suspect-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+    .suspect-avatar {
+      width: 44px; height: 44px; border-radius: 50%; background: #fee2e2; color: #b91c1c;
+      font-weight: 800; font-size: 18px; display: grid; place-items: center; flex-shrink: 0;
+    }
+    .suspect-avatar.risk-low { background: #e0f2fe; color: #0369a1; }
+    .suspect-avatar.risk-medium { background: #fef9c3; color: #854d0e; }
+    .suspect-avatar.risk-high { background: #fee2e2; color: #b91c1c; }
+
+    .suspect-title { font-size: 18px; font-weight: 800; color: #1a2833; margin: 0; }
+    .suspect-id { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .suspect-flags { display: flex; gap: 8px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+    .detail-row { font-size: 13px; color: #4b5d6b; margin: 6px 0; line-height: 1.4; }
+    .detail-row strong { color: #1f2d36; }
+    .linked-cases { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .linked-cases-title { font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+    .case-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .case-chip {
+      background: #f1f5f8; border: 1px solid #d4dee5; border-radius: 4px; padding: 3px 8px;
+      font-size: 11px; font-weight: 700; color: var(--blue); text-decoration: none;
+    }
+    .case-chip:hover { background: #e2edf5; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark">C</span>
+      <div>
+        <strong>CCECS</strong>
+        <small>Case Command</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/cases">Case records</a>
+      <a href="/evidence">Evidence custody</a>
+      <a href="/suspects" class="active">Suspects</a>
+      <a href="/officers">Officers</a>
+      <a href="/command-center">Command center</a>
+      <a href="/map">Crime map</a>
+    </nav>
+
+    <div class="sidebar-note">
+      Suspect records aggregate criminal history, risk evaluations, and cross-case pattern alerts.
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="page-top">
+      <div class="eyebrow">CRIMINAL INTELLIGENCE &amp; REGISTRY</div>
+      <button id="open-suspect" class="primary-btn">+ Link suspect</button>
+    </div>
+    <h1>Suspects &amp; Persons of Interest <span id="suspect-count" class="badge-count">0</span></h1>
+    <p class="subtitle">Investigative subject profiles, risk classification, physical descriptions, and repeat-offender alerts.</p>
+    <div style="background:#f3f6f8;border-left:4px solid #1b7db7;padding:12px 16px;border-radius:6px;font-size:12px;color:#355368;margin-bottom:18px;line-height:1.45">
+      <strong>Epistemic Safeguard:</strong> Recorded risk classifications reflect administrative triage markers and historical criminal record tags. They are operational workflow aids for investigation planning and do not constitute an automated determination of guilt, dangerousness, or legal liability.
+    </div>
+
+    <div class="filter-bar">
+      <input id="search" type="search" placeholder="Search by name, ID, contact, or description…" />
+      <select id="risk-filter">
+        <option value="">All risk levels</option>
+        <option value="HIGH">High risk</option>
+        <option value="MEDIUM">Medium risk</option>
+        <option value="LOW">Low risk</option>
+      </select>
+      <select id="repeat-filter">
+        <option value="">All records</option>
+        <option value="repeat">Repeat offenders only</option>
+      </select>
+    </div>
+
+    <section id="suspect-list" class="suspect-grid">
+      <div class="empty-row" style="grid-column:1/-1;">Loading suspect records…</div>
+    </section>
+  </main>
+
+  <dialog id="suspect-dialog">
+    <form id="suspect-form" method="dialog">
+      <div class="dialog-header">
+        <div>
+          <p class="dialog-tag">Case connection</p>
+          <h2>Link suspect to case</h2>
+        </div>
+        <button type="button" class="close-btn" data-close="suspect-dialog">×</button>
+      </div>
+
+      <label>
+        Case
+        <select name="caseId" id="case-select-input" required></select>
+      </label>
+      <label>
+        Suspect ID
+        <input name="id" placeholder="e.g. S-1001" required />
+      </label>
+      <label>
+        Full Name
+        <input name="name" placeholder="Full legal name or alias" required />
+      </label>
+      <label>
+        Contact number / information
+        <input name="contact" placeholder="Phone or email" required />
+      </label>
+      <label>
+        Physical description
+        <input name="physicalDescription" placeholder="Height, build, tattoos, clothing markers" required />
+      </label>
+      <label>
+        Risk assessment level
+        <select name="riskLevel">
+          <option>LOW</option>
+          <option selected>MEDIUM</option>
+          <option>HIGH</option>
+        </select>
+      </label>
+      <p class="form-note">Linking an existing suspect ID to multiple cases automatically activates repeat-offender flags.</p>
+      <p class="error"></p>
+      <button type="submit" class="primary-btn full-width">Link suspect</button>
+    </form>
+  </dialog>
+
+  <script>
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+
+    let suspects = [];
+    let cases = [];
+
+    async function api(url, options = {}) {
+      const response = await fetch(url, { credentials: 'same-origin', ...options });
+      if (response.status === 401 || response.status === 403) {
+        window.location.href = '/login';
+        throw new Error('Your session is no longer valid or you lack permissions.');
+      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    async function load() {
+      try {
+        const [loadedSuspects, loadedCases] = await Promise.all([
+          api('/api/suspects'),
+          api('/api/cases').catch(() => [])
+        ]);
+        suspects = Array.isArray(loadedSuspects) ? loadedSuspects : [];
+        cases = Array.isArray(loadedCases) ? loadedCases : [];
+
+        const select = document.getElementById('case-select-input');
+        select.innerHTML = cases.map((c) => `<option value="${esc(c.caseId)}">${esc(c.caseId)} - ${esc(c.title)}</option>`).join('');
+      } catch (err) {
+        console.error('Suspect load error', err);
+      }
+      render();
+    }
+
+    function render() {
+      const q = (document.getElementById('search').value || '').toLowerCase().trim();
+      const risk = document.getElementById('risk-filter').value;
+      const repeatOnly = document.getElementById('repeat-filter').value === 'repeat';
+
+      const filtered = suspects.filter((s) => {
+        if (risk && (s.risk || '').toUpperCase() !== risk) return false;
+        if (repeatOnly && !s.repeatOffender) return false;
+        if (q) {
+          const target = `${s.id} ${s.name} ${s.contact || ''} ${s.physicalDescription || ''}`.toLowerCase();
+          return target.includes(q);
+        }
+        return true;
+      });
+
+      document.getElementById('suspect-count').textContent = filtered.length;
+      const container = document.getElementById('suspect-list');
+
+      if (!filtered.length) {
+        container.innerHTML = '<div class="empty-row" style="grid-column:1/-1;">No matching suspects found.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map((s) => {
+        const riskClass = (s.risk || 'medium').toLowerCase();
+        const initial = (s.name || 'S').trim().charAt(0).toUpperCase();
+        return `
+          <div class="suspect-card">
+            <div>
+              <div class="suspect-head">
+                <div class="suspect-avatar risk-${riskClass}">${esc(initial)}</div>
+                <div>
+                  <h3 class="suspect-title">${esc(s.name)}</h3>
+                  <div class="suspect-id">ID: <strong>${esc(s.id)}</strong></div>
+                  <div class="suspect-flags">
+                    <span class="pill ${riskClass}">${esc(s.risk || 'UNKNOWN')} RISK</span>
+                    ${s.repeatOffender ? '<span class="repeat-flag">REPEAT OFFENDER</span>' : ''}
+                  </div>
+                </div>
+              </div>
+
+              <div class="detail-row">
+                <strong>Contact:</strong> ${esc(s.contact || 'None recorded')}
+              </div>
+              <div class="detail-row">
+                <strong>Description:</strong> ${esc(s.physicalDescription || 'No physical markers registered')}
+              </div>
+            </div>
+
+            <div class="linked-cases">
+              <div class="linked-cases-title">Cross-case links</div>
+              <div class="case-chips">
+                ${(s.cases || ['C-2026-041']).map((cId) => `
+                  <a class="case-chip" href="/investigation?caseId=${encodeURIComponent(cId)}">${esc(cId)} &rarr;</a>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showDialog(id) {
+      const d = document.getElementById(id);
+      if (d) d.showModal();
+    }
+    function closeDialog(id) {
+      const d = document.getElementById(id);
+      if (d) d.close();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-close]').forEach((btn) => {
+        btn.addEventListener('click', () => closeDialog(btn.dataset.close));
+      });
+
+      document.getElementById('open-suspect').addEventListener('click', () => {
+        document.getElementById('suspect-form').reset();
+        showDialog('suspect-dialog');
+      });
+
+      document.getElementById('search').addEventListener('input', render);
+      document.getElementById('risk-filter').addEventListener('change', render);
+      document.getElementById('repeat-filter').addEventListener('change', render);
+
+      document.getElementById('suspect-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const errorBox = form.querySelector('.error');
+        errorBox.textContent = '';
+        try {
+          const payload = new URLSearchParams(new FormData(form));
+          const result = await api('/api/suspects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: payload.toString()
+          });
+          closeDialog('suspect-dialog');
+          await load();
+          if (result && result.repeatOffender) {
+            alert('Intelligence Alert: This suspect has been linked across multiple cases and flagged as a Repeat Offender.');
+          }
+        } catch (err) {
+          errorBox.textContent = err.message;
+        }
+      });
+
+      load();
+    });
+  </script>
+  <script src="/app.js"></script>
+</body>
+</html>

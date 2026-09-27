@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CCECS | Officer Roster &amp; Workload</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .filter-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .filter-bar input[type="search"] { flex: 1; min-width: 260px; }
+    .badge-count { display: inline-block; background: #e0eef7; color: #1b7db7; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+
+    .officers-grid-page { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+    .officer-card-custom {
+      background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .officer-header { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+    .officer-avatar-large {
+      width: 48px; height: 48px; border-radius: 50%; background: #dfeefb; color: var(--blue);
+      display: grid; place-items: center; font-size: 20px; font-weight: 800; flex-shrink: 0;
+    }
+    .officer-name { font-size: 18px; font-weight: 800; color: #1a2833; margin: 0 0 4px; }
+    .officer-sub { font-size: 12px; color: var(--muted); margin: 0; }
+    
+    .officer-stats-box {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px;
+      display: flex; justify-content: space-between; align-items: center; margin-top: 14px;
+    }
+    .officer-stats-label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    .officer-stats-val { font-size: 24px; font-weight: 800; color: var(--navy); }
+    .workload-pill {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 3px 8px; border-radius: 99px;
+    }
+    .load-light { background: #dff1ea; color: #2b9b6d; }
+    .load-moderate { background: #fef9c3; color: #854d0e; }
+    .load-heavy { background: #fee2e2; color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark">C</span>
+      <div>
+        <strong>CCECS</strong>
+        <small>Case Command</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/cases">Case records</a>
+      <a href="/evidence">Evidence custody</a>
+      <a href="/suspects">Suspects</a>
+      <a href="/officers" class="active">Officers</a>
+      <a href="/command-center">Command center</a>
+      <a href="/map">Crime map</a>
+    </nav>
+
+    <div class="sidebar-note">
+      Automated load-balancing assigns newly created investigations to available officers with the fewest open cases.
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="page-top">
+      <div class="eyebrow">PERSONNEL &amp; CASELOAD MANAGEMENT</div>
+      <button id="open-officer" class="primary-btn">+ Add officer</button>
+    </div>
+
+    <h1>Officer profiles &amp; workload <span id="officer-count" class="badge-count">0</span></h1>
+    <p class="subtitle">Monitor active caseloads, badge identification, contact details, and department resource distribution.</p>
+
+    <section class="stats-grid" style="margin-bottom: 22px;">
+      <div class="stat-card">
+        <div class="stat-label">Total Officers</div>
+        <div id="stat-total" class="stat-value">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Assigned Cases</div>
+        <div id="stat-active" class="stat-value">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Average Caseload</div>
+        <div id="stat-avg" class="stat-value">0.0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Heaviest Caseload</div>
+        <div id="stat-max" class="stat-value">0</div>
+      </div>
+    </section>
+
+    <div class="filter-bar">
+      <input id="search" type="search" placeholder="Search by officer name, badge, ID, or phone…" />
+    </div>
+
+    <section id="officer-list" class="officers-grid-page">
+      <div class="empty-row" style="grid-column:1/-1;">Loading officer profiles…</div>
+    </section>
+  </main>
+
+  <dialog id="officer-dialog">
+    <form id="officer-form" method="dialog">
+      <div class="dialog-header">
+        <div>
+          <p class="dialog-tag">Department personnel</p>
+          <h2>Create officer profile</h2>
+        </div>
+        <button type="button" class="close-btn" data-close="officer-dialog">×</button>
+      </div>
+
+      <label>
+        Officer ID
+        <input name="id" placeholder="e.g. O4" required />
+      </label>
+      <label>
+        Full Name
+        <input name="name" placeholder="Officer Name" required />
+      </label>
+      <label>
+        Contact phone number
+        <input name="contact" placeholder="e.g. 9000000004" required />
+      </label>
+      <label>
+        Badge number
+        <input name="badge" placeholder="e.g. B104" required />
+      </label>
+      <p class="error"></p>
+      <button type="submit" class="primary-btn full-width">Create profile</button>
+    </form>
+  </dialog>
+
+  <script>
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+
+    let officers = [];
+
+    async function api(url, options = {}) {
+      const response = await fetch(url, { credentials: 'same-origin', ...options });
+      if (response.status === 401 || response.status === 403) {
+        window.location.href = '/login';
+        throw new Error('Your session is no longer valid or you lack permissions.');
+      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    async function load() {
+      try {
+        const loadedOfficers = await api('/api/officers');
+        officers = Array.isArray(loadedOfficers) ? loadedOfficers : [];
+      } catch (err) {
+        console.error('Officer load error', err);
+      }
+      render();
+    }
+
+    function render() {
+      const q = (document.getElementById('search').value || '').toLowerCase().trim();
+      const filtered = officers.filter((o) => {
+        if (q) {
+          const target = `${o.id} ${o.name} ${o.badge} ${o.contact}`.toLowerCase();
+          return target.includes(q);
+        }
+        return true;
+      });
+
+      document.getElementById('officer-count').textContent = filtered.length;
+      
+      const totalOfficers = officers.length;
+      const totalActiveCases = officers.reduce((sum, o) => sum + (o.activeCases || 0), 0);
+      const maxCases = officers.reduce((max, o) => Math.max(max, o.activeCases || 0), 0);
+      const avg = totalOfficers ? (totalActiveCases / totalOfficers).toFixed(1) : '0.0';
+
+      document.getElementById('stat-total').textContent = totalOfficers;
+      document.getElementById('stat-active').textContent = totalActiveCases;
+      document.getElementById('stat-avg').textContent = avg;
+      document.getElementById('stat-max').textContent = maxCases;
+
+      const container = document.getElementById('officer-list');
+      if (!filtered.length) {
+        container.innerHTML = '<div class="empty-row" style="grid-column:1/-1;">No matching officer records found.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map((o) => {
+        const initial = (o.name || 'O').trim().charAt(0).toUpperCase();
+        const count = o.activeCases || 0;
+        let loadBadge = '<span class="workload-pill load-light">Light load</span>';
+        if (count >= 4) {
+          loadBadge = '<span class="workload-pill load-heavy">Heavy load</span>';
+        } else if (count >= 2) {
+          loadBadge = '<span class="workload-pill load-moderate">Moderate</span>';
+        }
+
+        return `
+          <div class="officer-card-custom">
+            <div>
+              <div class="officer-header">
+                <div class="officer-avatar-large">${esc(initial)}</div>
+                <div>
+                  <h3 class="officer-name">${esc(o.name)}</h3>
+                  <p class="officer-sub">ID: <strong>${esc(o.id)}</strong> &bull; Badge: <strong>${esc(o.badge)}</strong></p>
+                </div>
+              </div>
+
+              <div style="font-size:13px; color:#5c7080; margin-top:8px;">
+                <strong>Contact:</strong> ${esc(o.contact)}
+              </div>
+            </div>
+
+            <div class="officer-stats-box">
+              <div>
+                <div class="officer-stats-label">Active investigations</div>
+                <div style="margin-top:4px;">${loadBadge}</div>
+              </div>
+              <div class="officer-stats-val">${esc(count)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showDialog(id) {
+      const d = document.getElementById(id);
+      if (d) d.showModal();
+    }
+    function closeDialog(id) {
+      const d = document.getElementById(id);
+      if (d) d.close();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-close]').forEach((btn) => {
+        btn.addEventListener('click', () => closeDialog(btn.dataset.close));
+      });
+
+      document.getElementById('open-officer').addEventListener('click', () => {
+        document.getElementById('officer-form').reset();
+        showDialog('officer-dialog');
+      });
+
+      document.getElementById('search').addEventListener('input', render);
+
+      document.getElementById('officer-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const errorBox = form.querySelector('.error');
+        errorBox.textContent = '';
+        try {
+          const payload = new URLSearchParams(new FormData(form));
+          await api('/api/officers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: payload.toString()
+          });
+          closeDialog('officer-dialog');
+          await load();
+        } catch (err) {
+          errorBox.textContent = err.message;
+        }
+      });
+
+      load();
+    });
+  </script>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+import com.sun.net.httpserver.*;import java.io.IOException;import java.util.*;
+public final class ChangePasswordHandler implements HttpHandler {
+ private final UserDao users;private final SessionManager sessions;public ChangePasswordHandler(UserDao u,SessionManager s){users=u;sessions=s;}
+ public void handle(HttpExchange e)throws IOException{UserSession x=sessions.get(HttpUtil.cookie(e,"CCECS_SESSION")).orElseThrow();if(e.getRequestMethod().equals("GET")){HttpUtil.text(e,200,"<!doctype html><h1>Change password</h1><form method='post'><input type='password' name='current' placeholder='Current password' required><input type='password' name='replacement' minlength='12' placeholder='New password (12+ characters)' required><button>Save password</button></form>","text/html");return;}try{Map<String,String> f=HttpUtil.form(e);if(!users.changePassword(x.getUserId(),f.getOrDefault("current","").toCharArray(),f.getOrDefault("replacement","").toCharArray())){HttpUtil.text(e,400,"Current password is incorrect.","text/plain");return;}HttpUtil.redirect(e,"/dashboard");}catch(Exception z){HttpUtil.text(e,500,"Password update failed.","text/plain");}}
+}

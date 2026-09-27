@@ -1,0 +1,35 @@
+# SQLite Database
+ccecs.db
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Compiled Java Classes
+out/
+bin/
+*.class
+
+# Distribution and Packaging
+dist/
+*.zip
+*.tar
+*.gz
+
+# IDE and Editor Files
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Temporary and Log Files
+*.tmp
+*.log
+scratch/
+.system_generated/
+
+# OS metadata
+Thumbs.db
+.DS_Store
